@@ -68,11 +68,14 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
                     {card.gemBonus[0].toUpperCase()}
                   </span>
                   <span>{card.prestigePoints}pts</span>
-                  <span>
+                  <span style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
                     {COLORED_GEMS
                       .filter(c => (card.cost[c] ?? 0) > 0)
-                      .map(c => `${card.cost[c]}${c[0]}`)
-                      .join(' ')}
+                      .map(c => (
+                        <span key={c} className={`cost-gem gem-${c}`}>
+                          {card.cost[c]}
+                        </span>
+                      ))}
                   </span>
                   {isActive && (
                     <div className="card-actions">
