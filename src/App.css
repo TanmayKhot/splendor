@@ -546,6 +546,13 @@ button:not(:disabled):hover {
   padding: 2px 8px;
 }
 
+.reserved-card-points {
+  font-size: 0.72rem;
+  color: #8a9ab8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 /* ── Modal ─────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
