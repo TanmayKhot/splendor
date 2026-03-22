@@ -1,0 +1,548 @@
+/* ── Global ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  transition: opacity 0.15s;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Gem colors ────────────────────────────────────── */
+.gem-white  { background: #f0f0f0; color: #333; }
+.gem-blue   { background: #2563eb; color: #fff; }
+.gem-green  { background: #16a34a; color: #fff; }
+.gem-red    { background: #dc2626; color: #fff; }
+.gem-black  { background: #1e1e1e; color: #fff; border: 1px solid #555; }
+.gem-gold   { background: #eab308; color: #333; }
+
+/* ── App layout ────────────────────────────────────── */
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app h1 {
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 1.8rem;
+  color: #eab308;
+}
+
+/* ── Game Setup ────────────────────────────────────── */
+.game-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 80px;
+}
+
+.game-setup input {
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #16213e;
+  color: #e0e0e0;
+  width: 260px;
+}
+
+.game-setup button {
+  padding: 12px 32px;
+  font-size: 1.1rem;
+  background: #eab308;
+  color: #1a1a2e;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* ── Turn Indicator ────────────────────────────────── */
+.turn-indicator {
+  text-align: center;
+  padding: 8px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #eab308;
+}
+
+/* ── Board layout ──────────────────────────────────── */
+.board {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
+}
+
+.board-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.board-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Noble Row ─────────────────────────────────────── */
+.noble-row {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  background: #16213e;
+  border-radius: 8px;
+}
+
+.noble-row h3 {
+  writing-mode: vertical-rl;
+  font-size: 0.75rem;
+  color: #999;
+  margin-right: 4px;
+}
+
+.noble-tile {
+  background: #2a1f5e;
+  border: 2px solid #7c3aed;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.noble-tile .points {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #eab308;
+}
+
+.noble-tile .requirement {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.noble-tile .req-gem {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* ── Card Tiers ────────────────────────────────────── */
+.card-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-tier {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.deck-button {
+  background: #16213e;
+  border: 2px dashed #444;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.deck-button:hover:not(:disabled) {
+  border-color: #eab308;
+  color: #eab308;
+}
+
+.deck-button .deck-count {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.card {
+  background: #16213e;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 120px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-points {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #eab308;
+}
+
+.card-bonus {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.card-cost {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cost-gem {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.card-actions button {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+}
+
+.btn-buy {
+  background: #16a34a;
+  color: #fff;
+}
+
+.btn-reserve {
+  background: #7c3aed;
+  color: #fff;
+}
+
+/* ── Gem Pool ──────────────────────────────────────── */
+.gem-pool {
+  background: #16213e;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.gem-pool h3 {
+  font-size: 0.85rem;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.gem-tokens {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gem-token {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: 3px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+
+.gem-token:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.gem-token.selected {
+  border-color: #eab308;
+  transform: scale(1.15);
+}
+
+.gem-token .token-label {
+  font-size: 0.55rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gem-selection-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gem-selection-actions button {
+  padding: 6px 16px;
+}
+
+.btn-confirm {
+  background: #16a34a;
+  color: #fff;
+}
+
+.btn-cancel {
+  background: #555;
+  color: #fff;
+}
+
+/* ── Player Panel ──────────────────────────────────── */
+.player-panel {
+  background: #16213e;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.player-panel.active {
+  border-color: #eab308;
+}
+
+.player-panel h3 {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.player-panel .player-points {
+  color: #eab308;
+  font-weight: 700;
+}
+
+.player-gems {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.player-gem {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.player-bonuses {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.player-bonus {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+.player-bonus.has-bonus {
+  opacity: 1;
+}
+
+.player-nobles {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.player-noble {
+  background: #2a1f5e;
+  border: 1px solid #7c3aed;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  color: #eab308;
+  font-weight: 700;
+}
+
+.reserved-cards {
+  margin-top: 6px;
+}
+
+.reserved-cards h4 {
+  font-size: 0.75rem;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.reserved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reserved-card {
+  background: #1a1a2e;
+  border: 1px solid #7c3aed;
+  border-radius: 4px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+
+.reserved-card .card-actions button {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+}
+
+/* ── Modal ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #16213e;
+  border: 2px solid #444;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 320px;
+  max-width: 500px;
+}
+
+.modal h2 {
+  margin-bottom: 16px;
+  color: #eab308;
+}
+
+.modal p {
+  margin-bottom: 12px;
+  color: #ccc;
+}
+
+/* ── Discard Modal ─────────────────────────────────── */
+.discard-gems {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.discard-gem {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 3px solid transparent;
+}
+
+.discard-gem.marked {
+  border-color: #dc2626;
+  opacity: 0.5;
+}
+
+/* ── Noble Modal ───────────────────────────────────── */
+.noble-choices {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.noble-choice {
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.noble-choice:hover {
+  transform: scale(1.05);
+}
+
+/* ── Game Over ─────────────────────────────────────── */
+.game-over {
+  text-align: center;
+  margin-top: 60px;
+}
+
+.game-over h2 {
+  font-size: 2rem;
+  color: #eab308;
+  margin-bottom: 8px;
+}
+
+.game-over .winner-points {
+  font-size: 1.3rem;
+  margin-bottom: 24px;
+}
+
+.game-over button {
+  padding: 12px 32px;
+  font-size: 1.1rem;
+  background: #eab308;
+  color: #1a1a2e;
+  font-weight: 600;
+  border-radius: 6px;
+}

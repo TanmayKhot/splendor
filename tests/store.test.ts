@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../src/store/gameStore';
-import type { ColoredGem, DevelopmentCard, NobleTile, PlayerState, GemColor } from '../src/game/types';
-import { MAX_GEMS_IN_HAND } from '../src/game/constants';
-import { getTotalGems, getPlayerPoints } from '../src/game/selectors';
+import type { ColoredGem, DevelopmentCard, NobleTile, PlayerState } from '../src/game/types';
+import { getTotalGems } from '../src/game/selectors';
 
 // Helper to get current store state
 function getState() {
