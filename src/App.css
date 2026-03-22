@@ -151,7 +151,7 @@ button:disabled {
 .noble-tile .req-gem {
   width: 22px;
   height: 22px;
-  border-radius: 50%;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
