@@ -67,7 +67,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
                   <span className={`card-bonus gem-${card.gemBonus}`}>
                     {card.gemBonus[0].toUpperCase()}
                   </span>
-                  <span className="reserved-card-points">{card.prestigePoints}pts</span>
+                  <span className="reserved-card-points">{card.prestigePoints} pts</span>
                   <span style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
                     {COLORED_GEMS
                       .filter(c => (card.cost[c] ?? 0) > 0)

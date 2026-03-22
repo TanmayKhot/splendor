@@ -549,7 +549,6 @@ button:not(:disabled):hover {
 .reserved-card-points {
   font-size: 0.72rem;
   color: #8a9ab8;
-  text-transform: uppercase;
   letter-spacing: 1px;
 }
 
