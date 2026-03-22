@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Browser-based 2-player Splendor board game. Client-side only (no backend). Stack: TypeScript, React 18, Zustand, Vite, Vitest.
+Fully playable browser-based 2-player local Splendor board game. Client-side only (no backend). Stack: TypeScript, React 18, Zustand, Vite, Vitest. All implementation phases (1–6) are complete — 79 tests passing, production build clean, engine purity verified.
 
 ## Commands
 
@@ -13,7 +13,7 @@ npm install          # install dependencies
 npm run dev          # dev server at http://localhost:5173
 npm run build        # production build → dist/
 npm run preview      # preview production build
-npm run test         # run all tests
+npm run test         # run all tests (79 tests, 3 test files)
 npx vitest run src/game/engine.test.ts   # run a single test file
 ```
 
@@ -36,10 +36,23 @@ components → (read) → Zustand store ← (dispatch actions) ← components
   - `types.ts` — All TypeScript types (`GemColor`, `CardCost`, `GameState`, etc.)
   - `constants.ts` — Hard-coded card data (90 cards), noble tiles (10), gem counts
   - `engine.ts` — Validation + state transition functions; called by the store
+  - `engine.test.ts` — Engine unit tests
   - `selectors.ts` — Derived state helpers (e.g. can player afford card?)
 - `src/store/gameStore.ts` — Zustand store; single source of truth; calls engine functions before mutating state
 - `src/components/` — React components; read from store, dispatch actions, never compute game logic
-- `tests/` — Vitest unit tests for engine and store
+  - `GameSetup.tsx` — Player name inputs, "Start Game" button
+  - `Card.tsx` — Single development card with Buy/Reserve buttons
+  - `CardTiers.tsx` — 3 tiers of 4 visible cards + deck buttons
+  - `GemPool.tsx` — Central gem supply with selection UI
+  - `NobleRow.tsx` — Noble tiles display
+  - `PlayerPanel.tsx` — Player gems (with X/10 counter), bonuses, nobles, reserved cards
+  - `TurnIndicator.tsx` — Current player indicator
+  - `DiscardModal.tsx` — Gem discard when over 10
+  - `NobleModal.tsx` — Noble selection when eligible
+  - `GameOver.tsx` — Winner display with play-again option
+- `tests/` — Additional Vitest unit tests
+  - `constants.test.ts` — Card/noble data validation
+  - `store.test.ts` — Store action and turn flow tests
 
 ### Important type distinctions
 
@@ -66,6 +79,10 @@ Accepts 1–3 distinct non-gold colors. Fewer than 3 is legal when the supply ha
 ### `reserveCard` signature
 
 `reserveCard(source: DevelopmentCard | { fromDeck: CardTier })` — passing a `DevelopmentCard` reserves a visible card; passing `{ fromDeck }` reserves the top of a deck (player sees it, opponent does not).
+
+## Styling
+
+Dark luxury theme with CSS in `src/App.css`. Gem colors: white, blue, green, red, black, gold. Cards show gem-colored bonus indicators and cost circles.
 
 ## Game data reference
 
