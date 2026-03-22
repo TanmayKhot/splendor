@@ -785,3 +785,112 @@ button:not(:disabled):hover {
   border-radius: 8px;
   letter-spacing: 1px;
 }
+
+/* ── AI Turn Disable Overlay ──────────────────────── */
+.ai-turn-active .card-actions button,
+.ai-turn-active .gem-token,
+.ai-turn-active .deck-button,
+.ai-turn-active .gem-selection-actions button {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* ── AI Reasoning Panel ───────────────────────────── */
+.ai-reasoning-panel {
+  background: #162035;
+  border: 1.5px solid #2a3a55;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  transition: opacity 0.2s;
+}
+
+.ai-reasoning-panel.dimmed {
+  opacity: 0.55;
+}
+
+.ai-reasoning-panel h4 {
+  font-size: 0.8rem;
+  color: #8a9ab8;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.ai-status-idle {
+  font-size: 0.85rem;
+  color: #6a7a9a;
+  font-style: italic;
+}
+
+.ai-status-thinking {
+  font-size: 0.9rem;
+  color: #f5c518;
+  font-weight: 600;
+  animation: ai-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ai-action-summary {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e8dcc8;
+  margin-bottom: 6px;
+}
+
+.ai-reasoning-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ai-reasoning-list li {
+  font-size: 0.78rem;
+  color: #aabbd0;
+  padding-left: 10px;
+  position: relative;
+}
+
+.ai-reasoning-list li::before {
+  content: '\2022';
+  position: absolute;
+  left: 0;
+  color: #f5c518;
+}
+
+.ai-status-error .ai-error-msg {
+  font-size: 0.85rem;
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.ai-error-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-retry {
+  background: #2a3a55;
+  color: #aabbcc;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+}
+
+.btn-retry:hover:not(:disabled) {
+  background: #3a4f70;
+  color: #e8dcc8;
+}
+
+.btn-manual {
+  background: linear-gradient(135deg, #f5c518, #d4a017);
+  color: #1a1008;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+}

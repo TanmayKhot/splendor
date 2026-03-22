@@ -9,11 +9,15 @@ import PlayerPanel from './components/PlayerPanel';
 import DiscardModal from './components/DiscardModal';
 import NobleModal from './components/NobleModal';
 import GameOver from './components/GameOver';
+import AiPlayerController from './components/AiPlayerController';
+import AiReasoningPanel from './components/AiReasoningPanel';
 
 function App() {
   const phase = useGameStore(s => s.phase);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
+  const aiMode = useGameStore(s => s.aiMode);
+  const aiThinking = useGameStore(s => s.aiMode && s.currentPlayerIndex === 1 && s.aiState.status === 'thinking');
 
   if (phase === 'setup') {
     return (
@@ -34,9 +38,10 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${aiThinking ? 'ai-turn-active' : ''}`}>
       <h1>Splendor</h1>
       <TurnIndicator />
+      {aiMode && <AiPlayerController />}
       <div className="board">
         <div className="board-main">
           <NobleRow />
@@ -46,6 +51,7 @@ function App() {
         <div className="board-side">
           <PlayerPanel playerIndex={0} />
           <PlayerPanel playerIndex={1} />
+          {aiMode && <AiReasoningPanel />}
         </div>
       </div>
       {pendingDiscard && <DiscardModal />}
