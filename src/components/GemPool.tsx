@@ -16,29 +16,39 @@ export default function GemPool() {
 
   const blocked = !!pendingDiscard || !!pendingNobles;
 
+  const isTake2 = selected.length === 2 && selected[0] === selected[1];
+
   function handleClick(color: GemColor) {
     if (blocked) return;
     if (color === 'gold') return; // gold cannot be taken directly
 
     const c = color as ColoredGem;
 
-    // If already selected once and supply >= 4, switch to take-2 mode
+    // If already selected once and supply >= 4, enter take-2 mode (add second copy)
     if (selected.length === 1 && selected[0] === c && gemSupply[c] >= 4) {
-      take2Gems(c);
-      setSelected([]);
+      setSelected([c, c]);
       return;
     }
 
-    // Toggle selection
+    // If in take-2 mode, clicking the same gem again deselects back to 1
+    if (isTake2 && selected[0] === c) {
+      setSelected([c]);
+      return;
+    }
+
+    // Toggle selection (only distinct colors for normal take)
     if (selected.includes(c)) {
       setSelected(selected.filter(s => s !== c));
-    } else if (selected.length < 3) {
+    } else if (selected.length < 3 && !isTake2) {
       setSelected([...selected, c]);
     }
   }
 
   function handleConfirm() {
-    if (selected.length > 0) {
+    if (isTake2) {
+      take2Gems(selected[0]);
+      setSelected([]);
+    } else if (selected.length > 0) {
       takeGems(selected);
       setSelected([]);
     }
@@ -67,7 +77,7 @@ export default function GemPool() {
       {selected.length > 0 && (
         <div className="gem-selection-actions">
           <button className="btn-confirm" onClick={handleConfirm}>
-            Take {selected.length} gem{selected.length !== 1 ? 's' : ''}
+            Take {isTake2 ? `2 ${selected[0]}` : `${selected.length} gem${selected.length !== 1 ? 's' : ''}`}
           </button>
           <button className="btn-cancel" onClick={handleCancel}>Cancel</button>
         </div>
