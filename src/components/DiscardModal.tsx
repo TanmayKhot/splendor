@@ -61,7 +61,7 @@ export default function DiscardModal() {
                     <span style={{ color: '#dc2626' }}>-{toDiscard[color]}</span>
                     {' '}
                     <button
-                      style={{ fontSize: '0.65rem', padding: '1px 4px', background: '#555', color: '#fff', borderRadius: '3px' }}
+                      style={{ fontSize: '0.65rem', padding: '1px 4px', background: '#2a3a55', color: '#aabbcc', borderRadius: '3px' }}
                       onClick={() => removeDiscard(color)}
                     >
                       undo

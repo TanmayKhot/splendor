@@ -7,8 +7,8 @@
 
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #f5f0e6;
-  color: #2a2520;
+  background: #0d1520;
+  color: #e8dcc8;
   min-height: 100vh;
 }
 
@@ -19,21 +19,26 @@ button {
   border: none;
   border-radius: 4px;
   padding: 6px 12px;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 
 button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+}
+
 /* ── Gem colors ────────────────────────────────────── */
-.gem-white  { background: #f0f0f0; color: #333; }
-.gem-blue   { background: #2563eb; color: #fff; }
-.gem-green  { background: #16a34a; color: #fff; }
-.gem-red    { background: #dc2626; color: #fff; }
-.gem-black  { background: #1e1e1e; color: #fff; border: 1px solid #555; }
-.gem-gold   { background: #eab308; color: #333; }
+.gem-white  { background: #e8e4dc; color: #222; box-shadow: inset 0 1px 2px rgba(255,255,255,0.8); }
+.gem-blue   { background: #1d4ed8; color: #fff; box-shadow: inset 0 1px 3px rgba(147,197,253,0.4); }
+.gem-green  { background: #15803d; color: #fff; box-shadow: inset 0 1px 3px rgba(134,239,172,0.4); }
+.gem-red    { background: #b91c1c; color: #fff; box-shadow: inset 0 1px 3px rgba(252,165,165,0.4); }
+.gem-black  { background: #1a1a2e; color: #ddd; border: 1px solid #555; box-shadow: inset 0 1px 3px rgba(255,255,255,0.1); }
+.gem-gold   { background: linear-gradient(135deg, #f5c518, #e6a817); color: #1a1008; box-shadow: inset 0 1px 3px rgba(255,230,120,0.5); }
 
 /* ── App layout ────────────────────────────────────── */
 .app {
@@ -47,8 +52,16 @@ button:disabled {
 .app h1 {
   text-align: center;
   margin-bottom: 8px;
-  font-size: 1.5rem;
-  color: #b8860b;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #f5c518 0%, #e6a817 50%, #ffd85e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 8px rgba(245,197,24,0.3));
 }
 
 /* ── Game Setup ────────────────────────────────────── */
@@ -63,20 +76,25 @@ button:disabled {
 .game-setup input {
   padding: 10px 14px;
   font-size: 1rem;
-  border: 1px solid #c8b89a;
+  border: 1px solid #3a4a6a;
   border-radius: 6px;
-  background: #fff;
-  color: #2a2520;
+  background: #1a2535;
+  color: #e8dcc8;
   width: 260px;
+}
+
+.game-setup input::placeholder {
+  color: #6a7a9a;
 }
 
 .game-setup button {
   padding: 12px 32px;
   font-size: 1.1rem;
-  background: #eab308;
-  color: #2a2520;
-  font-weight: 600;
+  background: linear-gradient(135deg, #f5c518, #d4a017);
+  color: #1a1008;
+  font-weight: 700;
   border-radius: 6px;
+  letter-spacing: 1px;
 }
 
 /* ── Turn Indicator ────────────────────────────────── */
@@ -86,7 +104,8 @@ button:disabled {
   margin-bottom: 6px;
   font-size: 1rem;
   font-weight: 600;
-  color: #8b6914;
+  color: #f5c518;
+  letter-spacing: 1px;
 }
 
 /* ── Board layout ──────────────────────────────────── */
@@ -112,40 +131,49 @@ button:disabled {
 .noble-row {
   display: flex;
   gap: 10px;
-  padding: 8px;
-  background: #e8e0d0;
-  border-radius: 8px;
+  padding: 10px;
+  background: #162035;
+  border: 1px solid #2a3a55;
+  border-radius: 10px;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
 .noble-row h3 {
   writing-mode: vertical-rl;
-  font-size: 0.75rem;
-  color: #6b5c4a;
+  font-size: 0.7rem;
+  color: #8a9ab8;
   margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .noble-tile {
-  background: #ede4d3;
-  border: 2px solid #b8860b;
-  border-radius: 8px;
+  background: linear-gradient(145deg, #1e2d45, #172438);
+  border: 2px solid #c8a832;
+  border-radius: 10px;
   padding: 8px;
-  min-width: 80px;
+  min-width: 82px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05);
 }
 
 .noble-tile .points {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #8b6914;
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f5c518, #e6a817);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 4px rgba(245,197,24,0.3));
 }
 
 .noble-tile .requirement {
   display: flex;
   gap: 4px;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .noble-tile .req-gem {
@@ -173,32 +201,37 @@ button:disabled {
 }
 
 .deck-button {
-  background: #e8e0d0;
-  border: 2px dashed #b8a88a;
-  border-radius: 8px;
+  background: #162035;
+  border: 2px dashed #3a4f70;
+  border-radius: 10px;
   padding: 8px;
-  min-width: 60px;
+  min-width: 62px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #6b5c4a;
-  font-size: 0.75rem;
+  color: #8a9ab8;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .deck-button:hover:not(:disabled) {
-  border-color: #b8860b;
-  color: #b8860b;
+  border-color: #f5c518;
+  color: #f5c518;
+  background: #1a2840;
 }
 
 .deck-button .deck-count {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #e8dcc8;
 }
 
 .card {
-  background: #ede4d3;
-  border: 2px solid #c8b89a;
+  background: #1a2535;
+  border: 1.5px solid #2a3a55;
   border-radius: 10px;
   padding: 10px;
   min-width: 120px;
@@ -207,14 +240,36 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.card:hover {
+  box-shadow: 0 5px 16px rgba(0,0,0,0.6);
 }
 
 /* ── Card color tints ─────────────────────────────── */
-.card-color-white  { background: rgba(240, 240, 240, 0.85); border-color: #ccc; }
-.card-color-blue   { background: rgba(37, 99, 235, 0.15); border-color: #93b5f6; }
-.card-color-green  { background: rgba(22, 163, 74, 0.15); border-color: #6ec992; }
-.card-color-red    { background: rgba(220, 38, 38, 0.15); border-color: #e88a8a; }
-.card-color-black  { background: rgba(30, 30, 30, 0.15); border-color: #999; }
+.card-color-white  {
+  background: linear-gradient(145deg, #c8ccd8, #b0b4c4);
+  border-color: #d8dcec;
+  color: #1a1e2e;
+}
+.card-color-blue   {
+  background: linear-gradient(145deg, #1c3c80, #142e68);
+  border-color: #3a70d8;
+}
+.card-color-green  {
+  background: linear-gradient(145deg, #1a4030, #122e20);
+  border-color: #2a8a50;
+}
+.card-color-red    {
+  background: linear-gradient(145deg, #561e1e, #3e1212);
+  border-color: #c83030;
+}
+.card-color-black  {
+  background: linear-gradient(145deg, #282830, #1c1c24);
+  border-color: #8888aa;
+}
 
 .card-header {
   display: flex;
@@ -223,20 +278,25 @@ button:disabled {
 }
 
 .card-points {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #8b6914;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f0ece4;
+}
+
+.card-color-white .card-points {
+  color: #2a2e3e;
 }
 
 .card-bonus {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.65rem;
   font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 .card-cost {
@@ -246,14 +306,15 @@ button:disabled {
 }
 
 .cost-gem {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 .card-actions {
@@ -264,32 +325,38 @@ button:disabled {
 
 .card-actions button {
   flex: 1;
-  padding: 4px 6px;
+  padding: 5px 6px;
   font-size: 0.75rem;
+  border-radius: 5px;
 }
 
 .btn-buy {
-  background: #16a34a;
+  background: linear-gradient(135deg, #16a34a, #0f7a38);
   color: #fff;
+  font-weight: 600;
 }
 
 .btn-reserve {
-  background: #eab308;
-  color: #1a1a2e;
-  font-weight: 600;
+  background: linear-gradient(135deg, #f5c518, #d4a017);
+  color: #1a1008;
+  font-weight: 700;
 }
 
 /* ── Gem Pool ──────────────────────────────────────── */
 .gem-pool {
-  background: #e8e0d0;
-  border-radius: 8px;
-  padding: 12px;
+  background: #162035;
+  border: 1px solid #2a3a55;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
 
 .gem-pool h3 {
-  font-size: 0.85rem;
-  color: #6b5c4a;
-  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: #8a9ab8;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .gem-tokens {
@@ -299,76 +366,89 @@ button:disabled {
 }
 
 .gem-token {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 1.1rem;
   border: 3px solid transparent;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
   cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.5);
 }
 
 .gem-token:hover:not(:disabled) {
-  transform: scale(1.1);
+  transform: scale(1.12);
+  box-shadow: 0 5px 14px rgba(0,0,0,0.6);
 }
 
 .gem-token.selected {
-  border-color: #b8860b;
-  transform: scale(1.15);
+  border-color: #f5c518;
+  transform: scale(1.18);
+  box-shadow: 0 0 14px rgba(245,197,24,0.5);
 }
 
 .gem-token .token-label {
-  font-size: 0.55rem;
-  font-weight: 400;
+  font-size: 0.52rem;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  opacity: 0.85;
 }
 
 .gem-selection-actions {
   display: flex;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .gem-selection-actions button {
-  padding: 6px 16px;
+  padding: 6px 18px;
 }
 
 .btn-confirm {
-  background: #16a34a;
+  background: linear-gradient(135deg, #16a34a, #0f7a38);
   color: #fff;
+  font-weight: 600;
 }
 
 .btn-cancel {
-  background: #555;
-  color: #fff;
+  background: #2a3a55;
+  color: #aabbcc;
 }
 
 /* ── Player Panel ──────────────────────────────────── */
 .player-panel {
-  background: #ede4d3;
-  border: 2px solid #c8b89a;
-  border-radius: 8px;
-  padding: 10px;
+  background: #162035;
+  border: 1.5px solid #2a3a55;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .player-panel.active {
-  border-color: #b8860b;
+  border-color: #f5c518;
+  box-shadow: 0 0 16px rgba(245,197,24,0.2), 0 2px 10px rgba(0,0,0,0.4);
 }
 
 .player-panel h3 {
   font-size: 0.95rem;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: #e8dcc8;
 }
 
 .player-panel .player-points {
-  color: #8b6914;
-  font-weight: 700;
+  background: linear-gradient(135deg, #f5c518, #e6a817);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
 }
 
 .player-gems {
@@ -387,6 +467,7 @@ button:disabled {
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 .player-bonuses {
@@ -404,11 +485,12 @@ button:disabled {
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
-  opacity: 0.5;
+  opacity: 0.25;
 }
 
 .player-bonus.has-bonus {
   opacity: 1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 .player-nobles {
@@ -418,23 +500,28 @@ button:disabled {
 }
 
 .player-noble {
-  background: #e8e0d0;
-  border: 1px solid #b8860b;
+  background: linear-gradient(135deg, #1e2d45, #172438);
+  border: 1px solid #c8a832;
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 2px 8px;
   font-size: 0.75rem;
-  color: #8b6914;
   font-weight: 700;
+  background: linear-gradient(135deg, #f5c518, #e6a817);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .reserved-cards {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .reserved-cards h4 {
-  font-size: 0.75rem;
-  color: #6b5c4a;
-  margin-bottom: 4px;
+  font-size: 0.72rem;
+  color: #8a9ab8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .reserved-list {
@@ -444,10 +531,10 @@ button:disabled {
 }
 
 .reserved-card {
-  background: #f5f0e6;
-  border: 1px solid #c8b89a;
-  border-radius: 4px;
-  padding: 4px 6px;
+  background: #1a2535;
+  border: 1px solid #2a3a55;
+  border-radius: 6px;
+  padding: 5px 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -466,7 +553,8 @@ button:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -474,22 +562,28 @@ button:disabled {
 }
 
 .modal {
-  background: #f5f0e6;
-  border: 2px solid #c8b89a;
-  border-radius: 12px;
-  padding: 24px;
+  background: #162035;
+  border: 1.5px solid #3a5080;
+  border-radius: 14px;
+  padding: 28px;
   min-width: 320px;
   max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
 }
 
 .modal h2 {
   margin-bottom: 16px;
-  color: #8b6914;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f5c518, #e6a817);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .modal p {
   margin-bottom: 12px;
-  color: #5a4e3e;
+  color: #aabbd0;
 }
 
 /* ── Discard Modal ─────────────────────────────────── */
@@ -511,11 +605,17 @@ button:disabled {
   font-weight: 700;
   cursor: pointer;
   border: 3px solid transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: transform 0.15s;
+}
+
+.discard-gem:hover {
+  transform: scale(1.1);
 }
 
 .discard-gem.marked {
   border-color: #dc2626;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 /* ── Noble Modal ───────────────────────────────────── */
@@ -531,7 +631,7 @@ button:disabled {
 }
 
 .noble-choice:hover {
-  transform: scale(1.05);
+  transform: scale(1.07);
 }
 
 /* ── Game Over ─────────────────────────────────────── */
@@ -541,21 +641,29 @@ button:disabled {
 }
 
 .game-over h2 {
-  font-size: 2rem;
-  color: #8b6914;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #f5c518, #e6a817);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 8px;
+  filter: drop-shadow(0 0 12px rgba(245,197,24,0.4));
 }
 
 .game-over .winner-points {
   font-size: 1.3rem;
   margin-bottom: 24px;
+  color: #aabbd0;
 }
 
 .game-over button {
-  padding: 12px 32px;
+  padding: 12px 36px;
   font-size: 1.1rem;
-  background: #eab308;
-  color: #2a2520;
-  font-weight: 600;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #f5c518, #d4a017);
+  color: #1a1008;
+  font-weight: 700;
+  border-radius: 8px;
+  letter-spacing: 1px;
 }
