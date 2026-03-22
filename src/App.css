@@ -7,8 +7,8 @@
 
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #1a1a2e;
-  color: #e0e0e0;
+  background: #f5f0e6;
+  color: #2a2520;
   min-height: 100vh;
 }
 
@@ -39,14 +39,16 @@ button:disabled {
 .app {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 12px 16px;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 .app h1 {
   text-align: center;
-  margin-bottom: 16px;
-  font-size: 1.8rem;
-  color: #eab308;
+  margin-bottom: 8px;
+  font-size: 1.5rem;
+  color: #b8860b;
 }
 
 /* ── Game Setup ────────────────────────────────────── */
@@ -61,10 +63,10 @@ button:disabled {
 .game-setup input {
   padding: 10px 14px;
   font-size: 1rem;
-  border: 1px solid #444;
+  border: 1px solid #c8b89a;
   border-radius: 6px;
-  background: #16213e;
-  color: #e0e0e0;
+  background: #fff;
+  color: #2a2520;
   width: 260px;
 }
 
@@ -72,7 +74,7 @@ button:disabled {
   padding: 12px 32px;
   font-size: 1.1rem;
   background: #eab308;
-  color: #1a1a2e;
+  color: #2a2520;
   font-weight: 600;
   border-radius: 6px;
 }
@@ -80,11 +82,11 @@ button:disabled {
 /* ── Turn Indicator ────────────────────────────────── */
 .turn-indicator {
   text-align: center;
-  padding: 8px;
-  margin-bottom: 12px;
-  font-size: 1.1rem;
+  padding: 4px;
+  margin-bottom: 6px;
+  font-size: 1rem;
   font-weight: 600;
-  color: #eab308;
+  color: #8b6914;
 }
 
 /* ── Board layout ──────────────────────────────────── */
@@ -111,20 +113,22 @@ button:disabled {
   display: flex;
   gap: 10px;
   padding: 8px;
-  background: #16213e;
+  background: #e8e0d0;
   border-radius: 8px;
+  align-items: center;
+  justify-content: center;
 }
 
 .noble-row h3 {
   writing-mode: vertical-rl;
   font-size: 0.75rem;
-  color: #999;
+  color: #6b5c4a;
   margin-right: 4px;
 }
 
 .noble-tile {
-  background: #2a1f5e;
-  border: 2px solid #7c3aed;
+  background: #ede4d3;
+  border: 2px solid #b8860b;
   border-radius: 8px;
   padding: 8px;
   min-width: 80px;
@@ -134,7 +138,7 @@ button:disabled {
 .noble-tile .points {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #eab308;
+  color: #8b6914;
 }
 
 .noble-tile .requirement {
@@ -169,8 +173,8 @@ button:disabled {
 }
 
 .deck-button {
-  background: #16213e;
-  border: 2px dashed #444;
+  background: #e8e0d0;
+  border: 2px dashed #b8a88a;
   border-radius: 8px;
   padding: 8px;
   min-width: 60px;
@@ -178,13 +182,13 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: #6b5c4a;
   font-size: 0.75rem;
 }
 
 .deck-button:hover:not(:disabled) {
-  border-color: #eab308;
-  color: #eab308;
+  border-color: #b8860b;
+  color: #b8860b;
 }
 
 .deck-button .deck-count {
@@ -193,16 +197,24 @@ button:disabled {
 }
 
 .card {
-  background: #16213e;
-  border: 2px solid #333;
-  border-radius: 8px;
-  padding: 8px;
+  background: #ede4d3;
+  border: 2px solid #c8b89a;
+  border-radius: 10px;
+  padding: 10px;
   min-width: 120px;
+  min-height: 140px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
+
+/* ── Card color tints ─────────────────────────────── */
+.card-color-white  { background: rgba(240, 240, 240, 0.85); border-color: #ccc; }
+.card-color-blue   { background: rgba(37, 99, 235, 0.15); border-color: #93b5f6; }
+.card-color-green  { background: rgba(22, 163, 74, 0.15); border-color: #6ec992; }
+.card-color-red    { background: rgba(220, 38, 38, 0.15); border-color: #e88a8a; }
+.card-color-black  { background: rgba(30, 30, 30, 0.15); border-color: #999; }
 
 .card-header {
   display: flex;
@@ -213,7 +225,7 @@ button:disabled {
 .card-points {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #eab308;
+  color: #8b6914;
 }
 
 .card-bonus {
@@ -262,20 +274,21 @@ button:disabled {
 }
 
 .btn-reserve {
-  background: #7c3aed;
-  color: #fff;
+  background: #eab308;
+  color: #1a1a2e;
+  font-weight: 600;
 }
 
 /* ── Gem Pool ──────────────────────────────────────── */
 .gem-pool {
-  background: #16213e;
+  background: #e8e0d0;
   border-radius: 8px;
   padding: 12px;
 }
 
 .gem-pool h3 {
   font-size: 0.85rem;
-  color: #999;
+  color: #6b5c4a;
   margin-bottom: 8px;
 }
 
@@ -305,7 +318,7 @@ button:disabled {
 }
 
 .gem-token.selected {
-  border-color: #eab308;
+  border-color: #b8860b;
   transform: scale(1.15);
 }
 
@@ -338,14 +351,14 @@ button:disabled {
 
 /* ── Player Panel ──────────────────────────────────── */
 .player-panel {
-  background: #16213e;
-  border: 2px solid #333;
+  background: #ede4d3;
+  border: 2px solid #c8b89a;
   border-radius: 8px;
   padding: 10px;
 }
 
 .player-panel.active {
-  border-color: #eab308;
+  border-color: #b8860b;
 }
 
 .player-panel h3 {
@@ -354,7 +367,7 @@ button:disabled {
 }
 
 .player-panel .player-points {
-  color: #eab308;
+  color: #8b6914;
   font-weight: 700;
 }
 
@@ -405,12 +418,12 @@ button:disabled {
 }
 
 .player-noble {
-  background: #2a1f5e;
-  border: 1px solid #7c3aed;
+  background: #e8e0d0;
+  border: 1px solid #b8860b;
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 0.75rem;
-  color: #eab308;
+  color: #8b6914;
   font-weight: 700;
 }
 
@@ -420,7 +433,7 @@ button:disabled {
 
 .reserved-cards h4 {
   font-size: 0.75rem;
-  color: #999;
+  color: #6b5c4a;
   margin-bottom: 4px;
 }
 
@@ -431,8 +444,8 @@ button:disabled {
 }
 
 .reserved-card {
-  background: #1a1a2e;
-  border: 1px solid #7c3aed;
+  background: #f5f0e6;
+  border: 1px solid #c8b89a;
   border-radius: 4px;
   padding: 4px 6px;
   display: flex;
@@ -453,7 +466,7 @@ button:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -461,8 +474,8 @@ button:disabled {
 }
 
 .modal {
-  background: #16213e;
-  border: 2px solid #444;
+  background: #f5f0e6;
+  border: 2px solid #c8b89a;
   border-radius: 12px;
   padding: 24px;
   min-width: 320px;
@@ -471,12 +484,12 @@ button:disabled {
 
 .modal h2 {
   margin-bottom: 16px;
-  color: #eab308;
+  color: #8b6914;
 }
 
 .modal p {
   margin-bottom: 12px;
-  color: #ccc;
+  color: #5a4e3e;
 }
 
 /* ── Discard Modal ─────────────────────────────────── */
@@ -529,7 +542,7 @@ button:disabled {
 
 .game-over h2 {
   font-size: 2rem;
-  color: #eab308;
+  color: #8b6914;
   margin-bottom: 8px;
 }
 
@@ -542,7 +555,7 @@ button:disabled {
   padding: 12px 32px;
   font-size: 1.1rem;
   background: #eab308;
-  color: #1a1a2e;
+  color: #2a2520;
   font-weight: 600;
   border-radius: 6px;
 }

@@ -21,7 +21,7 @@ export default function Card({ card, showActions = true }: CardProps) {
   const costs = COLORED_GEMS.filter(c => (card.cost[c] ?? 0) > 0);
 
   return (
-    <div className="card">
+    <div className={`card card-color-${card.gemBonus}`}>
       <div className="card-header">
         <span className="card-points">{card.prestigePoints || ''}</span>
         <span className={`card-bonus gem-${card.gemBonus}`}>{card.gemBonus[0].toUpperCase()}</span>
