@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../src/store/gameStore';
 import type { ColoredGem, DevelopmentCard, NobleTile, PlayerState } from '../src/game/types';
+import type { AiConfig } from '../src/ai/aiTypes';
 import { getTotalGems } from '../src/game/selectors';
 
 // Helper to get current store state
@@ -344,6 +345,77 @@ describe('Store — End-game sequence', () => {
     expect(state.phase).toBe('ended');
     expect(state.winner).not.toBeNull();
     expect(state.winner!.name).toBe('Alice');
+  });
+});
+
+describe('Store — AI mode', () => {
+  beforeEach(() => {
+    useGameStore.getState().resetGame();
+  });
+
+  const mockConfig: AiConfig = {
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-20250514',
+    apiKey: 'test-key',
+  };
+
+  it('initGame with aiMode sets aiMode, aiConfig, and player 2 name to "AI Player"', () => {
+    useGameStore.getState().initGame('Alice', 'Bob', true, mockConfig);
+    const state = getState();
+    expect(state.aiMode).toBe(true);
+    expect(state.aiConfig).toEqual(mockConfig);
+    expect(state.players[1].name).toBe('AI Player');
+    expect(state.aiState.status).toBe('idle');
+    expect(state.aiState.reasoning).toEqual([]);
+    expect(state.aiState.consecutiveFailures).toBe(0);
+  });
+
+  it('initGame without aiMode defaults to false', () => {
+    useGameStore.getState().initGame('Alice', 'Bob');
+    const state = getState();
+    expect(state.aiMode).toBe(false);
+    expect(state.aiConfig).toBeNull();
+    expect(state.players[1].name).toBe('Bob');
+  });
+
+  it('resetGame clears all AI state', () => {
+    useGameStore.getState().initGame('Alice', 'Bob', true, mockConfig);
+    useGameStore.getState().setAiState({ status: 'thinking', reasoning: ['test'] });
+    useGameStore.getState().resetGame();
+    const state = getState();
+    expect(state.aiMode).toBe(false);
+    expect(state.aiConfig).toBeNull();
+    expect(state.aiState.status).toBe('idle');
+    expect(state.aiState.reasoning).toEqual([]);
+    expect(state.aiState.errorMessage).toBe('');
+    expect(state.aiState.consecutiveFailures).toBe(0);
+  });
+
+  it('setAiState updates AI state partially', () => {
+    useGameStore.getState().initGame('Alice', 'Bob', true, mockConfig);
+    useGameStore.getState().setAiState({ status: 'thinking' });
+    expect(getState().aiState.status).toBe('thinking');
+    expect(getState().aiState.reasoning).toEqual([]); // unchanged
+
+    useGameStore.getState().setAiState({
+      status: 'done',
+      reasoning: ['Good move', 'Strong position'],
+      actionSummary: 'Took 3 gems',
+    });
+    const state = getState();
+    expect(state.aiState.status).toBe('done');
+    expect(state.aiState.reasoning).toEqual(['Good move', 'Strong position']);
+    expect(state.aiState.actionSummary).toBe('Took 3 gems');
+    expect(state.aiState.consecutiveFailures).toBe(0); // unchanged
+  });
+
+  it('setAiState tracks consecutive failures', () => {
+    useGameStore.getState().initGame('Alice', 'Bob', true, mockConfig);
+    useGameStore.getState().setAiState({ status: 'error', errorMessage: 'API error', consecutiveFailures: 1 });
+    expect(getState().aiState.consecutiveFailures).toBe(1);
+
+    useGameStore.getState().setAiState({ consecutiveFailures: 2 });
+    expect(getState().aiState.consecutiveFailures).toBe(2);
   });
 });
 

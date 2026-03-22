@@ -9,6 +9,7 @@ import type {
   GameState,
   GamePhase,
 } from '../game/types';
+import type { AiConfig, AiState } from '../ai/aiTypes';
 import {
   generateInitialState,
   canTakeGems,
@@ -27,12 +28,24 @@ import {
 import { getEligibleNobles, getTotalGems } from '../game/selectors';
 import { MAX_GEMS_IN_HAND } from '../game/constants';
 
+const initialAiState: AiState = {
+  status: 'idle',
+  reasoning: [],
+  actionSummary: '',
+  errorMessage: '',
+  consecutiveFailures: 0,
+};
+
 export interface GameStore extends GameState {
   pendingNobles: NobleTile[] | null;
   pendingDiscard: boolean;
+  aiMode: boolean;
+  aiConfig: AiConfig | null;
+  aiState: AiState;
 
-  initGame: (p1Name: string, p2Name: string) => void;
+  initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig) => void;
   resetGame: () => void;
+  setAiState: (state: Partial<AiState>) => void;
   takeGems: (colors: ColoredGem[]) => void;
   take2Gems: (color: ColoredGem) => void;
   reserveCard: (source: DevelopmentCard | { fromDeck: CardTier }) => void;
@@ -58,6 +71,9 @@ const initialStoreState = {
   turnCount: 0,
   pendingNobles: null as NobleTile[] | null,
   pendingDiscard: false,
+  aiMode: false,
+  aiConfig: null as AiConfig | null,
+  aiState: { ...initialAiState },
 };
 
 function postActionChecks(state: GameState): GameState & { pendingNobles: NobleTile[] | null; pendingDiscard: boolean } {
@@ -87,13 +103,25 @@ function postActionChecks(state: GameState): GameState & { pendingNobles: NobleT
 export const useGameStore = create<GameStore>((set, get) => ({
   ...initialStoreState,
 
-  initGame: (p1Name: string, p2Name: string) => {
-    const gameState = generateInitialState(p1Name, p2Name);
-    set({ ...gameState, pendingNobles: null, pendingDiscard: false });
+  initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig) => {
+    const p2 = aiMode ? 'AI Player' : p2Name;
+    const gameState = generateInitialState(p1Name, p2);
+    set({
+      ...gameState,
+      pendingNobles: null,
+      pendingDiscard: false,
+      aiMode: aiMode ?? false,
+      aiConfig: aiConfig ?? null,
+      aiState: { ...initialAiState },
+    });
   },
 
   resetGame: () => {
     set(initialStoreState);
+  },
+
+  setAiState: (partial: Partial<AiState>) => {
+    set((state) => ({ aiState: { ...state.aiState, ...partial } }));
   },
 
   takeGems: (colors: ColoredGem[]) => {
