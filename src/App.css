@@ -87,6 +87,17 @@ button:not(:disabled):hover {
   color: #6a7a9a;
 }
 
+.game-setup select {
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: 1px solid #3a4a6a;
+  border-radius: 6px;
+  background: #1a2535;
+  color: #e8dcc8;
+  width: 260px;
+  font-family: inherit;
+}
+
 .game-setup button {
   padding: 12px 32px;
   font-size: 1.1rem;
@@ -95,6 +106,101 @@ button:not(:disabled):hover {
   font-weight: 700;
   border-radius: 6px;
   letter-spacing: 1px;
+}
+
+/* ── Mode Toggle ──────────────────────────────────── */
+.mode-toggle {
+  display: flex;
+  gap: 12px;
+}
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #3a4a6a;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #8a9ab8;
+  background: #1a2535;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.mode-option.active {
+  border-color: #f5c518;
+  color: #f5c518;
+}
+
+.mode-option input[type="radio"] {
+  accent-color: #f5c518;
+}
+
+/* ── AI Config ────────────────────────────────────── */
+.ai-player-label {
+  font-size: 0.9rem;
+  color: #8a9ab8;
+  font-style: italic;
+}
+
+.ai-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 260px;
+}
+
+.ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-field span {
+  font-size: 0.75rem;
+  color: #8a9ab8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ai-field input,
+.ai-field select {
+  width: 100%;
+}
+
+.test-connection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-test {
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  background: #2a3a55;
+  color: #aabbcc;
+  border-radius: 5px;
+}
+
+.btn-test:not(:disabled):hover {
+  background: #3a4f70;
+  color: #e8dcc8;
+}
+
+.test-success {
+  font-size: 0.85rem;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.test-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Turn Indicator ────────────────────────────────── */

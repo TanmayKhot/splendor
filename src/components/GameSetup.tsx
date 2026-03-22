@@ -1,27 +1,174 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import type { AiProvider } from '../ai/aiTypes';
+
+const DEFAULT_MODELS: Record<AiProvider, string> = {
+  anthropic: 'claude-sonnet-4-20250514',
+  openai: 'gpt-4o',
+  custom: 'gpt-4o',
+};
 
 export default function GameSetup() {
   const [p1Name, setP1Name] = useState('');
   const [p2Name, setP2Name] = useState('');
+  const [mode, setMode] = useState<'local' | 'ai'>('local');
+  const [provider, setProvider] = useState<AiProvider>('anthropic');
+  const [model, setModel] = useState(DEFAULT_MODELS.anthropic);
+  const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testError, setTestError] = useState('');
   const initGame = useGameStore(s => s.initGame);
 
-  const canStart = p1Name.trim() !== '' && p2Name.trim() !== '';
+  const isAi = mode === 'ai';
+  const canStart = p1Name.trim() !== '' && (!isAi ? p2Name.trim() !== '' : apiKey.trim() !== '');
+
+  function handleProviderChange(newProvider: AiProvider) {
+    setProvider(newProvider);
+    setModel(DEFAULT_MODELS[newProvider]);
+    setTestStatus('idle');
+  }
+
+  async function testConnection() {
+    setTestStatus('testing');
+    setTestError('');
+    try {
+      const body = {
+        provider,
+        model,
+        apiKey,
+        baseUrl: provider === 'custom' ? baseUrl : undefined,
+        ...(provider === 'anthropic'
+          ? { system: 'Reply with OK.', messages: [{ role: 'user', content: 'ping' }] }
+          : { messages: [{ role: 'system', content: 'Reply with OK.' }, { role: 'user', content: 'ping' }] }),
+      };
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => 'Unknown error');
+        throw new Error(`${res.status}: ${errText}`);
+      }
+      setTestStatus('success');
+    } catch (err) {
+      setTestStatus('error');
+      setTestError(err instanceof Error ? err.message : 'Connection failed');
+    }
+  }
+
+  function handleStart() {
+    if (isAi) {
+      initGame(p1Name.trim(), '', true, {
+        provider,
+        model,
+        apiKey,
+        ...(provider === 'custom' ? { baseUrl } : {}),
+      });
+    } else {
+      initGame(p1Name.trim(), p2Name.trim());
+    }
+  }
 
   return (
     <div className="game-setup">
       <h2>New Game</h2>
+
+      <div className="mode-toggle">
+        <label className={`mode-option ${!isAi ? 'active' : ''}`}>
+          <input
+            type="radio"
+            name="mode"
+            checked={!isAi}
+            onChange={() => setMode('local')}
+          />
+          2 Players (Local)
+        </label>
+        <label className={`mode-option ${isAi ? 'active' : ''}`}>
+          <input
+            type="radio"
+            name="mode"
+            checked={isAi}
+            onChange={() => setMode('ai')}
+          />
+          1 Player vs AI
+        </label>
+      </div>
+
       <input
         placeholder="Player 1 name"
         value={p1Name}
         onChange={e => setP1Name(e.target.value)}
       />
-      <input
-        placeholder="Player 2 name"
-        value={p2Name}
-        onChange={e => setP2Name(e.target.value)}
-      />
-      <button disabled={!canStart} onClick={() => initGame(p1Name.trim(), p2Name.trim())}>
+
+      {!isAi ? (
+        <input
+          placeholder="Player 2 name"
+          value={p2Name}
+          onChange={e => setP2Name(e.target.value)}
+        />
+      ) : (
+        <>
+          <div className="ai-player-label">Player 2: AI Player</div>
+
+          <div className="ai-config">
+            <label className="ai-field">
+              <span>Provider</span>
+              <select value={provider} onChange={e => handleProviderChange(e.target.value as AiProvider)}>
+                <option value="anthropic">Anthropic</option>
+                <option value="openai">OpenAI</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+
+            <label className="ai-field">
+              <span>Model</span>
+              <input
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                placeholder="Model name"
+              />
+            </label>
+
+            <label className="ai-field">
+              <span>API Key</span>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={e => { setApiKey(e.target.value); setTestStatus('idle'); }}
+                placeholder="Enter API key"
+              />
+            </label>
+
+            {provider === 'custom' && (
+              <label className="ai-field">
+                <span>Base URL</span>
+                <input
+                  value={baseUrl}
+                  onChange={e => setBaseUrl(e.target.value)}
+                  placeholder="https://api.example.com/v1"
+                />
+              </label>
+            )}
+
+            <div className="test-connection">
+              <button
+                type="button"
+                className="btn-test"
+                disabled={!apiKey.trim() || testStatus === 'testing'}
+                onClick={testConnection}
+              >
+                {testStatus === 'testing' ? 'Testing...' : 'Test Connection'}
+              </button>
+              {testStatus === 'success' && <span className="test-success">Connected</span>}
+              {testStatus === 'error' && <span className="test-error">{testError || 'Failed'}</span>}
+            </div>
+          </div>
+        </>
+      )}
+
+      <button disabled={!canStart} onClick={handleStart}>
         Start Game
       </button>
     </div>
