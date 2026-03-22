@@ -11,6 +11,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
   const purchaseCard = useGameStore(s => s.purchaseCard);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
+  const aiMode = useGameStore(s => s.aiMode);
 
   const isActive = currentPlayerIndex === playerIndex;
   const points = getPlayerPoints(player);
@@ -66,6 +67,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
               const affordable = canAfford(card, player);
               return (
                 <div key={card.id} className="reserved-card">
+                  {aiMode && <span className="card-label">{card.id}</span>}
                   <span className={`card-bonus gem-${card.gemBonus}`}>
                     {card.gemBonus[0].toUpperCase()}
                   </span>

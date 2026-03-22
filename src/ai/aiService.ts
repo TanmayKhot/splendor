@@ -7,23 +7,14 @@ import type {
 } from '../game/types';
 import type { AiAction, AiConfig, AiResponse } from './aiTypes';
 import { COLORED_GEMS } from '../game/constants';
-import { getPlayerBonuses, getPlayerPoints } from '../game/selectors';
+import { getPlayerBonuses, getPlayerPoints, getEffectiveCost, canAfford } from '../game/selectors';
 
 // ── Abbreviation Maps ───────────────────────────────────────
 
-const GEM_ABBREV: Record<string, string> = {
-  white: 'w',
-  blue: 'u',
-  green: 'g',
-  red: 'r',
-  black: 'k',
-  gold: 'au',
-};
-
-function abbrevGems(gems: Partial<Record<string, number>>): Record<string, number> {
+function compactGems(gems: Partial<Record<string, number>>): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [color, count] of Object.entries(gems)) {
-    if (count && count > 0) out[GEM_ABBREV[color] ?? color] = count;
+    if (count && count > 0) out[color] = count;
   }
   return out;
 }
@@ -41,25 +32,29 @@ RULES SUMMARY:
 - Max 10 gems in hand; discard down if over.
 - Nobles visit automatically when you meet their bonus requirements (3 prestige each).
 
-STRATEGY TIPS:
-- Prioritize cards that give bonuses toward nobles or expensive cards you want.
-- Engine-building: cheap cards with useful bonuses are very valuable early.
-- Watch your opponent's progress and don't let them run away with nobles.
+STRATEGY PRIORITIES (in order):
+1. BUY CARDS whenever you can afford one — this is the MOST important action. Cards give permanent bonuses that reduce future costs and earn prestige points. Hoarding gems without buying is a losing strategy.
+2. Prefer cards that give prestige points AND bonuses you need for nobles or expensive cards.
+3. Engine-building: cheap tier-1 cards with useful bonuses are very valuable early.
+4. PLAN AHEAD: Check the PLANNING section — it shows cards you can't yet afford and exactly which gems you still need. Take gems that move you toward buying a specific high-value card in 1-2 turns.
+5. Reserve cards only to block opponents or secure high-value cards you'll buy soon.
 
-RESPOND WITH ONLY a JSON object matching this schema:
+RESPONSE FORMAT:
+Respond with ONLY a raw JSON object. No markdown code blocks, no backticks, no explanation text.
+
 {
   "reasoning": ["bullet 1", "bullet 2", "bullet 3"],
   "action": <one of the legal actions provided>
 }
 
 Action schemas:
+- {"type":"purchaseCard","cardId":"1-K-01"} — buy a visible or reserved card by ID
 - {"type":"takeGems","colors":["red","blue","green"]} — take 1-3 distinct colored gems
 - {"type":"take2Gems","color":"red"} — take 2 of one color (supply must have 4+)
-- {"type":"purchaseCard","cardId":"1-K-01"} — buy a visible or reserved card by ID
 - {"type":"reserveCard","cardId":"1-K-01"} — reserve a visible card by ID
 - {"type":"reserveCard","fromDeck":1} — reserve top card from deck tier (1/2/3)
 
-Do NOT include any text outside the JSON object.`;
+CRITICAL: Output ONLY the JSON object. No markdown, no \`\`\`, no text before or after.`;
 }
 
 export function buildGameStatePrompt(state: GameState): string {
@@ -71,14 +66,14 @@ export function buildGameStatePrompt(state: GameState): string {
   const serializePlayer = (p: typeof p1, bonuses: typeof b1, label: string) => ({
     name: label,
     pts: getPlayerPoints(p),
-    gems: abbrevGems(p.gems),
-    bonuses: abbrevGems(bonuses),
+    gems: compactGems(p.gems),
+    bonuses: compactGems(bonuses),
     reserved: p.reserved.map(c => ({
       id: c.id,
       tier: c.tier,
       pts: c.prestigePoints,
-      bonus: GEM_ABBREV[c.gemBonus],
-      cost: abbrevGems(c.cost),
+      bonus: c.gemBonus,
+      cost: compactGems(c.cost),
     })),
     purchasedCount: p.purchased.length,
   });
@@ -86,15 +81,15 @@ export function buildGameStatePrompt(state: GameState): string {
   const serializeCard = (c: DevelopmentCard) => ({
     id: c.id,
     pts: c.prestigePoints,
-    bonus: GEM_ABBREV[c.gemBonus],
-    cost: abbrevGems(c.cost),
+    bonus: c.gemBonus,
+    cost: compactGems(c.cost),
   });
 
   const gameState = {
     you: serializePlayer(p2, b2, 'You (P2)'),
     opp: serializePlayer(p1, b1, 'Opponent (P1)'),
     board: {
-      gems: abbrevGems(state.board.gemSupply),
+      gems: compactGems(state.board.gemSupply),
       tier1: state.board.visibleCards[0].map(serializeCard),
       tier2: state.board.visibleCards[1].map(serializeCard),
       tier3: state.board.visibleCards[2].map(serializeCard),
@@ -106,12 +101,61 @@ export function buildGameStatePrompt(state: GameState): string {
       nobles: state.board.nobles.map(n => ({
         id: n.id,
         pts: n.prestigePoints,
-        req: abbrevGems(n.requirement),
+        req: compactGems(n.requirement),
       })),
     },
   };
 
-  return `Current game state:\n${JSON.stringify(gameState)}`;
+  // Build planning section: cards not yet affordable with remaining cost
+  const planning = buildPlanningSection(state, p2);
+
+  return `Current game state:\n${JSON.stringify(gameState)}${planning}`;
+}
+
+function buildPlanningSection(state: GameState, player: typeof state.players[0]): string {
+  const lines: string[] = ['\n\nPLANNING — cards you CANNOT yet afford (effective remaining cost after your bonuses):'];
+  let count = 0;
+
+  for (let tier = 0; tier < 3; tier++) {
+    for (const card of state.board.visibleCards[tier]) {
+      if (canAfford(card, player)) continue;
+      const eff = getEffectiveCost(card, player);
+      const stillNeed: Record<string, number> = {};
+      for (const color of COLORED_GEMS) {
+        const need = eff[color] ?? 0;
+        const have = player.gems[color];
+        if (need > have) {
+          stillNeed[color] = need - have;
+        }
+      }
+      if (Object.keys(stillNeed).length === 0) continue;
+      const needStr = Object.entries(stillNeed).map(([k, v]) => `${k}:${v}`).join(', ');
+      lines.push(`  ${card.id} (${card.prestigePoints}pts, bonus=${card.gemBonus}, still need: {${needStr}})`);
+      count++;
+    }
+  }
+
+  // Also include reserved cards that aren't affordable
+  for (const card of player.reserved) {
+    if (canAfford(card, player)) continue;
+    const eff = getEffectiveCost(card, player);
+    const stillNeed: Record<string, number> = {};
+    for (const color of COLORED_GEMS) {
+      const need = eff[color] ?? 0;
+      const have = player.gems[color];
+      if (need > have) {
+        stillNeed[color] = need - have;
+      }
+    }
+    if (Object.keys(stillNeed).length === 0) continue;
+    const needStr = Object.entries(stillNeed).map(([k, v]) => `${k}:${v}`).join(', ');
+    lines.push(`  ${card.id} [RESERVED] (${card.prestigePoints}pts, bonus=${card.gemBonus}, still need: {${needStr}})`);
+    count++;
+  }
+
+  if (count === 0) return '';
+  lines.push('TIP: Take gems matching these "still need" costs to buy these cards in upcoming turns.');
+  return lines.join('\n');
 }
 
 export function buildLegalMovesPrompt(actions: Action[]): string {
@@ -136,22 +180,31 @@ export function buildLegalMovesPrompt(actions: Action[]): string {
           reserve.push(a.source.id);
         }
         break;
-      case 'purchaseCard':
-        purchase.push(a.card.id);
+      case 'purchaseCard': {
+        const c = a.card;
+        const costStr = Object.entries(c.cost)
+          .filter(([, v]) => v && v > 0)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(', ');
+        purchase.push(`${c.id} (${c.prestigePoints}pts, bonus=${c.gemBonus}, cost={${costStr}})`);
         break;
+      }
     }
   }
 
   const lines: string[] = ['Legal moves:'];
 
+  if (purchase.length > 0) {
+    lines.push(`Purchase — YOU CAN AFFORD these cards (buy one with {"type":"purchaseCard","cardId":"<id>"}):`);
+    for (const p of purchase) {
+      lines.push(`  ${p}`);
+    }
+  }
   if (takeGems.length > 0) {
     lines.push(`Take 3 gems — combos: ${takeGems.join(' | ')}`);
   }
   if (take2.length > 0) {
     lines.push(`Take 2 gems — colors: ${take2.join(', ')}`);
-  }
-  if (purchase.length > 0) {
-    lines.push(`Purchase — cards: ${purchase.join(', ')}`);
   }
   if (reserve.length > 0) {
     lines.push(`Reserve visible — cards: ${reserve.join(', ')}`);
@@ -167,18 +220,30 @@ export function buildDiscardPrompt(
   playerGems: Record<GemColor, number>,
   excessCount: number,
 ): string {
-  return `You have too many gems. Current gems: ${JSON.stringify(abbrevGems(playerGems))}
+  // Show gems with full color names so the AI uses them in the response
+  const gemsList = Object.entries(playerGems)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(', ');
+  return `You have too many gems (max 10). Current gems: {${gemsList}}
 You must discard exactly ${excessCount} gem(s).
-Respond with ONLY a JSON object:
-{"reasoning":["..."],"action":{"type":"discardGems","gems":{<abbreviated color>:<count>,...}}}
-Use full color names in the gems object (white/blue/green/red/black/gold).`;
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{"reasoning":["why you chose these gems to discard"],"action":{"type":"discardGems","gems":{"<color>":<count>}}}
+
+Example: {"reasoning":["Discard excess red"],"action":{"type":"discardGems","gems":{"red":2}}}
+
+Use FULL color names: white, blue, green, red, black, gold.`;
 }
 
 export function buildNobleSelectionPrompt(nobles: NobleTile[]): string {
   const listed = nobles.map(n => `${n.id} (${n.prestigePoints}pts)`).join(', ');
   return `You qualify for multiple nobles. Choose one: ${listed}
-Respond with ONLY a JSON object:
-{"reasoning":["..."],"action":{"type":"selectNoble","nobleId":"<id>"}}`;
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{"reasoning":["why you chose this noble"],"action":{"type":"selectNoble","nobleId":"<id>"}}
+
+Example: {"reasoning":["Higher point value"],"action":{"type":"selectNoble","nobleId":"N-01"}}`;
 }
 
 // ── Response Parsing ────────────────────────────────────────
@@ -334,7 +399,11 @@ async function callAiProxy(
     // Anthropic: { content: [{ type: "text", text: "..." }] }
     return data.content?.[0]?.text ?? JSON.stringify(data);
   }
-  // OpenAI / custom: { choices: [{ message: { content: "..." } }] }
+  if (config.provider === 'gemini') {
+    // Gemini: { candidates: [{ content: { parts: [{ text: "..." }] } }] }
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? JSON.stringify(data);
+  }
+  // OpenAI / OpenRouter / custom: { choices: [{ message: { content: "..." } }] }
   return data.choices?.[0]?.message?.content ?? JSON.stringify(data);
 }
 

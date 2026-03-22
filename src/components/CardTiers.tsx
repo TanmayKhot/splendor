@@ -10,6 +10,7 @@ export default function CardTiers() {
   const reserveCard = useGameStore(s => s.reserveCard);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
+  const aiMode = useGameStore(s => s.aiMode);
 
   const blocked = !!pendingDiscard || !!pendingNobles;
 
@@ -31,7 +32,7 @@ export default function CardTiers() {
               <span className="deck-count">{deckSize}</span>
             </button>
             {cards.map(card => (
-              <Card key={card.id} card={card} />
+              <Card key={card.id} card={card} showLabel={aiMode} />
             ))}
           </div>
         );

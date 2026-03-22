@@ -8,15 +8,16 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
 interface ChatRequest {
-  provider: 'anthropic' | 'openai' | 'custom';
+  provider: 'anthropic' | 'openai' | 'gemini' | 'openrouter' | 'custom';
   model: string;
   apiKey: string;
   baseUrl?: string;
+  system?: string;
   messages: unknown[];
 }
 
 app.post('/api/ai/chat', async (req, res) => {
-  const { provider, model, apiKey, baseUrl, messages } = req.body as ChatRequest;
+  const { provider, model, apiKey, baseUrl, system, messages } = req.body as ChatRequest;
 
   if (!provider || !model || !apiKey || !messages) {
     res.status(400).json({ error: 'Missing required fields: provider, model, apiKey, messages' });
@@ -38,8 +39,39 @@ app.post('/api/ai/chat', async (req, res) => {
       body = JSON.stringify({
         model,
         max_tokens: 1024,
+        ...(system ? { system } : {}),
         messages,
       });
+    } else if (provider === 'gemini') {
+      // Gemini uses generateContent endpoint with a different body shape
+      url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      headers = { 'Content-Type': 'application/json' };
+      // Convert OpenAI-style messages to Gemini contents format
+      const contents: { role: string; parts: { text: string }[] }[] = [];
+      let systemInstruction: { parts: { text: string }[] } | undefined;
+      for (const msg of messages as { role: string; content: string }[]) {
+        if (msg.role === 'system') {
+          systemInstruction = { parts: [{ text: msg.content }] };
+        } else {
+          contents.push({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }],
+          });
+        }
+      }
+      body = JSON.stringify({
+        ...(systemInstruction ? { systemInstruction } : {}),
+        contents,
+        generationConfig: { maxOutputTokens: 1024 },
+      });
+    } else if (provider === 'openrouter') {
+      // OpenRouter uses OpenAI-compatible API
+      url = 'https://openrouter.ai/api/v1/chat/completions';
+      headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      };
+      body = JSON.stringify({ model, messages });
     } else {
       // openai or custom
       url = provider === 'custom' && baseUrl
@@ -49,10 +81,7 @@ app.post('/api/ai/chat', async (req, res) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       };
-      body = JSON.stringify({
-        model,
-        messages,
-      });
+      body = JSON.stringify({ model, messages });
     }
 
     const response = await fetch(url, {

@@ -2,7 +2,7 @@ import type { ColoredGem, CardTier, GemColor } from '../game/types';
 
 // ── Provider Config ────────────────────────────────────────
 
-export type AiProvider = 'anthropic' | 'openai' | 'custom';
+export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'openrouter' | 'custom';
 
 export interface AiConfig {
   provider: AiProvider;

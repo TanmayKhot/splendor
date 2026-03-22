@@ -5,6 +5,8 @@ import type { AiProvider } from '../ai/aiTypes';
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-sonnet-4-20250514',
   openai: 'gpt-4o',
+  gemini: 'gemini-2.5-flash',
+  openrouter: 'anthropic/claude-sonnet-4',
   custom: 'gpt-4o',
 };
 
@@ -118,6 +120,8 @@ export default function GameSetup() {
               <select value={provider} onChange={e => handleProviderChange(e.target.value as AiProvider)}>
                 <option value="anthropic">Anthropic</option>
                 <option value="openai">OpenAI</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="openrouter">OpenRouter</option>
                 <option value="custom">Custom</option>
               </select>
             </label>

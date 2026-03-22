@@ -41,13 +41,13 @@ function makeSampleActions(state: GameState): Action[] {
 // ── Prompt Construction Tests ───────────────────────────────
 
 describe('buildGameStatePrompt', () => {
-  it('produces valid compact JSON with abbreviated keys', () => {
+  it('produces valid JSON with full color names', () => {
     const state = makeSampleState();
     const prompt = buildGameStatePrompt(state);
 
     expect(prompt).toContain('Current game state:');
-    // Extract the JSON part
-    const jsonStr = prompt.replace('Current game state:\n', '');
+    // Extract the JSON part (before optional PLANNING section)
+    const jsonStr = prompt.replace('Current game state:\n', '').split('\n\nPLANNING')[0];
     const parsed = JSON.parse(jsonStr);
 
     // Check structure
@@ -61,21 +61,23 @@ describe('buildGameStatePrompt', () => {
     expect(parsed.board).toHaveProperty('deckSizes');
     expect(parsed.board).toHaveProperty('nobles');
 
-    // Check abbreviated gem keys (supply should have w, u, g, r, k, au)
-    expect(parsed.board.gems).toHaveProperty('w');
-    expect(parsed.board.gems).toHaveProperty('au');
+    // Check full color name gem keys (supply should have white, blue, etc.)
+    expect(parsed.board.gems).toHaveProperty('white');
+    expect(parsed.board.gems).toHaveProperty('gold');
 
-    // Check cards have abbreviated bonus
+    // Check cards have full color bonus
     expect(parsed.board.tier1[0]).toHaveProperty('id');
     expect(parsed.board.tier1[0]).toHaveProperty('bonus');
     expect(parsed.board.tier1[0]).toHaveProperty('cost');
+    // bonus should be a full color name
+    expect(['white', 'blue', 'green', 'red', 'black']).toContain(parsed.board.tier1[0].bonus);
   });
 
-  it('stays under 2000 tokens (rough char estimate)', () => {
+  it('stays under 4000 tokens (rough char estimate)', () => {
     const state = makeSampleState();
     const prompt = buildGameStatePrompt(state);
-    // Rough estimate: ~4 chars per token
-    expect(prompt.length).toBeLessThan(8000);
+    // Rough estimate: ~4 chars per token; full names + planning section is larger
+    expect(prompt.length).toBeLessThan(16000);
   });
 });
 

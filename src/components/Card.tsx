@@ -6,9 +6,10 @@ import { useGameStore } from '../store/gameStore';
 interface CardProps {
   card: DevelopmentCard;
   showActions?: boolean;
+  showLabel?: boolean;
 }
 
-export default function Card({ card, showActions = true }: CardProps) {
+export default function Card({ card, showActions = true, showLabel = false }: CardProps) {
   const player = useGameStore(s => s.players[s.currentPlayerIndex]);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
@@ -22,6 +23,7 @@ export default function Card({ card, showActions = true }: CardProps) {
 
   return (
     <div className={`card card-color-${card.gemBonus}`}>
+      {showLabel && <span className="card-label">{card.id}</span>}
       <div className="card-header">
         <span className="card-points">{card.prestigePoints || ''}</span>
         <span className={`card-bonus gem-${card.gemBonus}`}>{card.gemBonus[0].toUpperCase()}</span>
