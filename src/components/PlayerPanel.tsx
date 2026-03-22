@@ -16,6 +16,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
   const points = getPlayerPoints(player);
   const bonuses = getPlayerBonuses(player);
   const blocked = !!pendingDiscard || !!pendingNobles;
+  const totalGems = ALL_GEMS.reduce((sum, c) => sum + (player.gems[c] ?? 0), 0);
 
   return (
     <div className={`player-panel ${isActive ? 'active' : ''}`}>
@@ -24,6 +25,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
       </h3>
 
       {/* Gems */}
+      <div className="player-gems-header">Gems: {totalGems}/10</div>
       <div className="player-gems">
         {ALL_GEMS.map(color => (
           player.gems[color] > 0 ? (

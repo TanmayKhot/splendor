@@ -451,6 +451,12 @@ button:not(:disabled):hover {
   font-weight: 800;
 }
 
+.player-gems-header {
+  font-size: 0.8rem;
+  color: #b0b0b0;
+  margin-bottom: 4px;
+}
+
 .player-gems {
   display: flex;
   gap: 4px;
