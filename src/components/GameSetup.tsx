@@ -78,24 +78,20 @@ export default function GameSetup() {
       <h2>New Game</h2>
 
       <div className="mode-toggle">
-        <label className={`mode-option ${!isAi ? 'active' : ''}`}>
-          <input
-            type="radio"
-            name="mode"
-            checked={!isAi}
-            onChange={() => setMode('local')}
-          />
+        <button
+          type="button"
+          className={`mode-option ${!isAi ? 'active' : ''}`}
+          onClick={() => setMode('local')}
+        >
           2 Players (Local)
-        </label>
-        <label className={`mode-option ${isAi ? 'active' : ''}`}>
-          <input
-            type="radio"
-            name="mode"
-            checked={isAi}
-            onChange={() => setMode('ai')}
-          />
+        </button>
+        <button
+          type="button"
+          className={`mode-option ${isAi ? 'active' : ''}`}
+          onClick={() => setMode('ai')}
+        >
           1 Player vs AI
-        </label>
+        </button>
       </div>
 
       <input

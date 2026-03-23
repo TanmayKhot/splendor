@@ -98,7 +98,7 @@ button:not(:disabled):hover {
   font-family: inherit;
 }
 
-.game-setup button {
+.game-setup > button {
   padding: 12px 32px;
   font-size: 1.1rem;
   background: linear-gradient(135deg, #f5c518, #d4a017);
@@ -106,35 +106,40 @@ button:not(:disabled):hover {
   font-weight: 700;
   border-radius: 6px;
   letter-spacing: 1px;
+  width: 260px;
 }
 
 /* ── Mode Toggle ──────────────────────────────────── */
 .mode-toggle {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  width: 260px;
 }
 
 .mode-option {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  justify-content: center;
+  padding: 10px 24px;
   border: 1px solid #3a4a6a;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
   color: #8a9ab8;
   background: #1a2535;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex: 1;
+}
+
+.mode-option:hover {
+  border-color: #5a6a8a;
+  color: #c8d8e8;
 }
 
 .mode-option.active {
   border-color: #f5c518;
   color: #f5c518;
-}
-
-.mode-option input[type="radio"] {
-  accent-color: #f5c518;
+  background: rgba(245, 197, 24, 0.08);
 }
 
 /* ── AI Config ────────────────────────────────────── */
@@ -562,6 +567,13 @@ button:not(:disabled):hover {
   margin-bottom: 8px;
   font-weight: 700;
   color: #e8dcc8;
+}
+
+.player-panel .ai-model-name {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #6a7a9a;
+  margin-left: 4px;
 }
 
 .player-panel .player-points {
