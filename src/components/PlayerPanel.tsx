@@ -12,7 +12,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const aiMode = useGameStore(s => s.aiMode);
-  const aiConfig = useGameStore(s => s.aiConfig);
+  const aiModel = useGameStore(s => s.aiConfig?.model);
 
   const isActive = currentPlayerIndex === playerIndex;
   const points = getPlayerPoints(player);
@@ -24,8 +24,8 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
     <div className={`player-panel ${isActive ? 'active' : ''}`}>
       <h3>
         {player.name}
-        {aiMode && playerIndex === 1 && aiConfig?.model && (
-          <span className="ai-model-name">({aiConfig.model})</span>
+        {aiMode && playerIndex === 1 && aiModel && (
+          <span className="ai-model-name">({aiModel})</span>
         )}
         {' '}<span className="player-points">({points} pts)</span>
       </h3>
