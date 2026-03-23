@@ -1,0 +1,283 @@
+import { useState, useEffect, useCallback } from 'react';
+import { getSocket, connectSocket, setStoredRoom, getStoredRoom, clearStoredRoom } from '../online/socketClient';
+import { useGameStore } from '../store/gameStore';
+
+type LobbyState = 'idle' | 'waiting' | 'ready';
+
+interface PlayerInfo {
+  nickname: string;
+  playerIndex: number;
+  connected: boolean;
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  ROOM_NOT_FOUND: 'Room not found. Check the code and try again.',
+  ROOM_FULL: 'This room is already full.',
+  NOT_HOST: 'Only the host can start the game.',
+  SERVER_AT_CAPACITY: 'Too many rooms created. Please wait a moment.',
+};
+
+export default function OnlineLobby() {
+  const [lobbyState, setLobbyState] = useState<LobbyState>('idle');
+  const [nickname, setNickname] = useState('');
+  const [roomCode, setRoomCode] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [players, setPlayers] = useState<PlayerInfo[]>([]);
+  const [myPlayerIndex, setMyPlayerIndex] = useState<number>(-1);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const initGame = useGameStore(s => s.initGame);
+
+  // Deep-link: auto-fill room code from URL
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/room\/([A-Z0-9]{6})$/i);
+    if (match) {
+      setJoinCode(match[1].toUpperCase());
+    }
+  }, []);
+
+  // Socket event setup
+  useEffect(() => {
+    const socket = getSocket();
+
+    function onCreated(data: { code: string; playerIndex: number; reconnectToken: string }) {
+      setRoomCode(data.code);
+      setMyPlayerIndex(data.playerIndex);
+
+      setPlayers([{ nickname, playerIndex: data.playerIndex, connected: true }]);
+      setStoredRoom({ roomCode: data.code, reconnectToken: data.reconnectToken, nickname });
+      setLobbyState('waiting');
+      setError('');
+    }
+
+    function onJoined(data: { code: string; players: PlayerInfo[]; playerIndex: number; reconnectToken: string }) {
+      setRoomCode(data.code);
+      setMyPlayerIndex(data.playerIndex);
+
+      setPlayers(data.players);
+      const myNick = data.players.find(p => p.playerIndex === data.playerIndex)?.nickname || nickname;
+      setStoredRoom({ roomCode: data.code, reconnectToken: data.reconnectToken, nickname: myNick });
+      setLobbyState(data.players.length >= 2 ? 'ready' : 'waiting');
+      setError('');
+    }
+
+    function onUpdated(data: { players: PlayerInfo[] }) {
+      setPlayers(data.players);
+      if (data.players.length >= 2) {
+        setLobbyState('ready');
+      }
+    }
+
+    function onError(data: { message: string; errorCode?: string }) {
+      const msg = data.errorCode ? (ERROR_MESSAGES[data.errorCode] || data.message) : data.message;
+      setError(msg);
+    }
+
+    function onGameState(data: { gameState: any; pendingDiscard: boolean; pendingNobles: any[] }) {
+      // Game started — transition to game board via store
+      const gs = data.gameState;
+      initGame(gs.players[0].name, gs.players[1].name);
+      // We need to apply the full server state. For now, initGame sets up the store,
+      // and the store will be updated via applyServerState in step 9.6.
+      // For this step, just trigger the transition out of setup.
+    }
+
+    function onDestroyed(data: { reason: string }) {
+      const reasons: Record<string, string> = {
+        player_left: 'Your opponent left the room.',
+        opponent_disconnected: 'Your opponent disconnected.',
+        timeout: 'Room timed out due to inactivity.',
+        server_restarting: 'Server is restarting. Please create a new room.',
+      };
+      setError(reasons[data.reason] || 'Room was closed.');
+      setLobbyState('idle');
+      setRoomCode('');
+      setPlayers([]);
+      clearStoredRoom();
+    }
+
+    function onPlayerDisconnected(data: { playerIndex: number }) {
+      setPlayers(prev => prev.map(p =>
+        p.playerIndex === data.playerIndex ? { ...p, connected: false } : p
+      ));
+    }
+
+    function onPlayerReconnected(data: { playerIndex: number }) {
+      setPlayers(prev => prev.map(p =>
+        p.playerIndex === data.playerIndex ? { ...p, connected: true } : p
+      ));
+    }
+
+    socket.on('room:created', onCreated);
+    socket.on('room:joined', onJoined);
+    socket.on('room:updated', onUpdated);
+    socket.on('room:error', onError);
+    socket.on('game:state', onGameState);
+    socket.on('room:destroyed', onDestroyed);
+    socket.on('room:playerDisconnected', onPlayerDisconnected);
+    socket.on('room:playerReconnected', onPlayerReconnected);
+
+    connectSocket();
+
+    // Auto-rejoin from stored room data
+    const stored = getStoredRoom();
+    if (stored) {
+      setNickname(stored.nickname);
+      socket.emit('room:join', {
+        code: stored.roomCode,
+        nickname: stored.nickname,
+        reconnectToken: stored.reconnectToken,
+      });
+    }
+
+    return () => {
+      socket.off('room:created', onCreated);
+      socket.off('room:joined', onJoined);
+      socket.off('room:updated', onUpdated);
+      socket.off('room:error', onError);
+      socket.off('game:state', onGameState);
+      socket.off('room:destroyed', onDestroyed);
+      socket.off('room:playerDisconnected', onPlayerDisconnected);
+      socket.off('room:playerReconnected', onPlayerReconnected);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCreate = useCallback(() => {
+    if (!nickname.trim()) return;
+    setError('');
+    const socket = getSocket();
+    socket.emit('room:create', { nickname: nickname.trim() });
+  }, [nickname]);
+
+  const handleJoin = useCallback(() => {
+    if (!nickname.trim() || !joinCode.trim()) return;
+    setError('');
+    const socket = getSocket();
+    socket.emit('room:join', { code: joinCode.trim().toUpperCase(), nickname: nickname.trim() });
+  }, [nickname, joinCode]);
+
+  const handleStart = useCallback(() => {
+    if (!roomCode) return;
+    const socket = getSocket();
+    socket.emit('room:start', { code: roomCode });
+  }, [roomCode]);
+
+  const handleLeave = useCallback(() => {
+    if (!roomCode) return;
+    const socket = getSocket();
+    socket.emit('room:leave', { code: roomCode });
+    setLobbyState('idle');
+    setRoomCode('');
+    setPlayers([]);
+    clearStoredRoom();
+    setError('');
+  }, [roomCode]);
+
+  const handleCopyLink = useCallback(() => {
+    const link = `${window.location.origin}/room/${roomCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [roomCode]);
+
+  const isHost = myPlayerIndex === 0;
+
+  // --- Idle state ---
+  if (lobbyState === 'idle') {
+    return (
+      <div className="online-lobby">
+        <div className="lobby-section">
+          <label className="lobby-label">Enter your nickname:</label>
+          <input
+            type="text"
+            value={nickname}
+            onChange={e => setNickname(e.target.value)}
+            placeholder="Nickname"
+            maxLength={20}
+          />
+        </div>
+
+        <button
+          className="lobby-btn-primary"
+          onClick={handleCreate}
+          disabled={!nickname.trim()}
+        >
+          Create Room
+        </button>
+
+        <div className="lobby-divider">or</div>
+
+        <div className="lobby-section">
+          <label className="lobby-label">Room code:</label>
+          <input
+            type="text"
+            value={joinCode}
+            onChange={e => setJoinCode(e.target.value.toUpperCase())}
+            placeholder="ABCDEF"
+            maxLength={6}
+          />
+          <button
+            className="lobby-btn-primary"
+            onClick={handleJoin}
+            disabled={!nickname.trim() || !joinCode.trim()}
+          >
+            Join Room
+          </button>
+        </div>
+
+        {error && <p className="lobby-error">{error}</p>}
+      </div>
+    );
+  }
+
+  // --- Waiting / Ready state ---
+  return (
+    <div className="online-lobby">
+      <div className="lobby-room-header">
+        <span className="lobby-room-label">Room:</span>
+        <span className="lobby-room-code">{roomCode}</span>
+      </div>
+
+      {lobbyState === 'waiting' && (
+        <div className="lobby-share">
+          <span className="lobby-share-label">Share this link:</span>
+          <button className="lobby-copy-btn" onClick={handleCopyLink}>
+            {copied ? 'Copied!' : `${window.location.origin}/room/${roomCode}`}
+          </button>
+        </div>
+      )}
+
+      <div className="lobby-players">
+        <h3>Players</h3>
+        {players.map(p => (
+          <div key={p.playerIndex} className={`lobby-player ${!p.connected ? 'disconnected' : ''}`}>
+            <span className="lobby-player-status">{p.connected ? '\u2713' : '\u23F3'}</span>
+            <span>{p.nickname}</span>
+            {p.playerIndex === myPlayerIndex && <span className="lobby-you">(you)</span>}
+          </div>
+        ))}
+        {lobbyState === 'waiting' && players.length < 2 && (
+          <div className="lobby-player waiting">
+            <span className="lobby-player-status">{'\u23F3'}</span>
+            <span>Waiting for opponent...</span>
+          </div>
+        )}
+      </div>
+
+      <div className="lobby-actions">
+        {lobbyState === 'ready' && isHost && (
+          <button className="lobby-btn-primary" onClick={handleStart}>
+            Start Game
+          </button>
+        )}
+        <button className="lobby-btn-secondary" onClick={handleLeave}>
+          Leave Room
+        </button>
+      </div>
+
+      {error && <p className="lobby-error">{error}</p>}
+    </div>
+  );
+}

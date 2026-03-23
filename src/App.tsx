@@ -11,8 +11,9 @@ import NobleModal from './components/NobleModal';
 import GameOver from './components/GameOver';
 import AiPlayerController from './components/AiPlayerController';
 import AiReasoningPanel from './components/AiReasoningPanel';
+import PasswordGate from './components/PasswordGate';
 
-function App() {
+function AppContent() {
   const phase = useGameStore(s => s.phase);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
@@ -57,6 +58,14 @@ function App() {
       {pendingDiscard && <DiscardModal />}
       {pendingNobles && <NobleModal />}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <PasswordGate>
+      <AppContent />
+    </PasswordGate>
   );
 }
 
