@@ -314,14 +314,16 @@ function runPostActionChecks(room: Room, state: GameState): RoomResult<{ gameSta
   return finishTurn(room, state);
 }
 
-export function disconnectPlayer(socketId: string): { room: Room; playerIndex: 0 | 1 } | null {
+export function disconnectPlayer(socketId: string, onTimeout?: (roomCode: string) => void): { room: Room; playerIndex: 0 | 1 } | null {
   for (const room of rooms.values()) {
     const player = room.players.find(p => p.socketId === socketId);
     if (player) {
       player.connected = false;
       const timerKey = `${room.code}:${player.playerIndex}`;
       graceTimers.set(timerKey, setTimeout(() => {
-        destroyRoom(room.code);
+        const code = room.code;
+        destroyRoom(code);
+        onTimeout?.(code);
       }, RECONNECT_GRACE_MS));
       return { room, playerIndex: player.playerIndex };
     }
