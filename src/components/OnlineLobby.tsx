@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getSocket, connectSocket, setStoredRoom, getStoredRoom, clearStoredRoom } from '../online/socketClient';
+import {
+  getSocket, connectSocket, setStoredRoom, getStoredRoom, clearStoredRoom,
+  setupSocketListeners, setupVisibilityHandler,
+} from '../online/socketClient';
 import { useGameStore } from '../store/gameStore';
 
 type LobbyState = 'idle' | 'waiting' | 'ready';
@@ -24,10 +27,12 @@ export default function OnlineLobby() {
   const [joinCode, setJoinCode] = useState('');
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [myPlayerIndex, setMyPlayerIndex] = useState<number>(-1);
+  const [reconnectToken, setReconnectToken] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const initGame = useGameStore(s => s.initGame);
+  const setOnlineState = useGameStore(s => s.setOnlineState);
+  const applyServerState = useGameStore(s => s.applyServerState);
 
   // Deep-link: auto-fill room code from URL
   useEffect(() => {
@@ -37,14 +42,29 @@ export default function OnlineLobby() {
     }
   }, []);
 
+  // Listen for room:destroyed events from setupSocketListeners
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent).detail as string;
+      setError(msg);
+      setLobbyState('idle');
+      setRoomCode('');
+      setPlayers([]);
+    };
+    window.addEventListener('splendor:room-destroyed', handler);
+    return () => window.removeEventListener('splendor:room-destroyed', handler);
+  }, []);
+
   // Socket event setup
   useEffect(() => {
     const socket = getSocket();
+    setupSocketListeners(socket);
+    const cleanupVisibility = setupVisibilityHandler();
 
     function onCreated(data: { code: string; playerIndex: number; reconnectToken: string }) {
       setRoomCode(data.code);
       setMyPlayerIndex(data.playerIndex);
-
+      setReconnectToken(data.reconnectToken);
       setPlayers([{ nickname, playerIndex: data.playerIndex, connected: true }]);
       setStoredRoom({ roomCode: data.code, reconnectToken: data.reconnectToken, nickname });
       setLobbyState('waiting');
@@ -54,7 +74,7 @@ export default function OnlineLobby() {
     function onJoined(data: { code: string; players: PlayerInfo[]; playerIndex: number; reconnectToken: string }) {
       setRoomCode(data.code);
       setMyPlayerIndex(data.playerIndex);
-
+      setReconnectToken(data.reconnectToken);
       setPlayers(data.players);
       const myNick = data.players.find(p => p.playerIndex === data.playerIndex)?.nickname || nickname;
       setStoredRoom({ roomCode: data.code, reconnectToken: data.reconnectToken, nickname: myNick });
@@ -75,12 +95,25 @@ export default function OnlineLobby() {
     }
 
     function onGameState(data: { gameState: any; pendingDiscard: boolean; pendingNobles: any[] }) {
-      // Game started — transition to game board via store
       const gs = data.gameState;
-      initGame(gs.players[0].name, gs.players[1].name);
-      // We need to apply the full server state. For now, initGame sets up the store,
-      // and the store will be updated via applyServerState in step 9.6.
-      // For this step, just trigger the transition out of setup.
+      const storedRoom = getStoredRoom();
+
+      // Apply the full server state to the store
+      applyServerState(gs, data.pendingDiscard, data.pendingNobles);
+
+      // Build OnlineState — use component state with storedRoom as fallback
+      const currentMyIndex = myPlayerIndex >= 0 ? myPlayerIndex : 0;
+      const opponentIdx = currentMyIndex === 0 ? 1 : 0;
+
+      setOnlineState({
+        roomCode: roomCode || storedRoom?.roomCode || '',
+        myPlayerIndex: currentMyIndex as 0 | 1,
+        nickname: gs.players[currentMyIndex]?.name || nickname,
+        opponentNickname: gs.players[opponentIdx]?.name || '',
+        reconnectToken: reconnectToken || storedRoom?.reconnectToken || '',
+        connectionStatus: 'connected',
+        opponentConnected: true,
+      });
     }
 
     function onDestroyed(data: { reason: string }) {
@@ -132,6 +165,7 @@ export default function OnlineLobby() {
     }
 
     return () => {
+      cleanupVisibility();
       socket.off('room:created', onCreated);
       socket.off('room:joined', onJoined);
       socket.off('room:updated', onUpdated);
@@ -140,6 +174,7 @@ export default function OnlineLobby() {
       socket.off('room:destroyed', onDestroyed);
       socket.off('room:playerDisconnected', onPlayerDisconnected);
       socket.off('room:playerReconnected', onPlayerReconnected);
+      // Don't disconnect here — the game might still be active
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

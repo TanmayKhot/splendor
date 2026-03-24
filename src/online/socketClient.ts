@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client';
+import { useGameStore } from '../store/gameStore';
 
 let socket: Socket | null = null;
+let listenersSetUp = false;
 
 // --- localStorage helpers ---
 
@@ -69,6 +71,7 @@ export function disconnectSocket(): void {
   if (socket) {
     socket.disconnect();
     socket = null;
+    listenersSetUp = false;
   }
 }
 
@@ -83,4 +86,89 @@ export function setupVisibilityHandler(): () => void {
   };
   document.addEventListener('visibilitychange', handler);
   return () => document.removeEventListener('visibilitychange', handler);
+}
+
+// --- Socket event listeners wired to the Zustand store ---
+
+export function setupSocketListeners(s: Socket): void {
+  if (listenersSetUp) return;
+  listenersSetUp = true;
+
+  const set = useGameStore.setState;
+
+  s.on('game:state', ({ gameState, pendingDiscard, pendingNobles }) => {
+    useGameStore.getState().applyServerState(gameState, pendingDiscard, pendingNobles);
+  });
+
+  s.on('room:playerDisconnected', () => {
+    set(state => ({
+      onlineState: state.onlineState
+        ? { ...state.onlineState, opponentConnected: false }
+        : null,
+    }));
+  });
+
+  s.on('room:playerReconnected', () => {
+    set(state => ({
+      onlineState: state.onlineState
+        ? { ...state.onlineState, opponentConnected: true }
+        : null,
+    }));
+  });
+
+  s.on('room:destroyed', ({ reason }) => {
+    clearStoredRoom();
+    useGameStore.getState().resetGame();
+    set({ onlineState: null });
+
+    // Surface reason as a lobby-level message if back at setup
+    const reasons: Record<string, string> = {
+      player_left: 'Your opponent left the game.',
+      opponent_disconnected: 'Your opponent disconnected.',
+      timeout: 'Room timed out due to inactivity.',
+      server_restarting: 'Server is restarting. Please create a new room.',
+    };
+    const msg = reasons[reason] || 'Room was closed.';
+    // Dispatch a custom event so OnlineLobby can pick it up
+    window.dispatchEvent(new CustomEvent('splendor:room-destroyed', { detail: msg }));
+  });
+
+  s.on('game:error', ({ message }) => {
+    console.error('Game error:', message);
+  });
+
+  s.on('connect', () => {
+    set(state => ({
+      onlineState: state.onlineState
+        ? { ...state.onlineState, connectionStatus: 'connected' as const }
+        : null,
+    }));
+
+    // Auto-rejoin room if we have stored room data and are in online mode
+    const stored = getStoredRoom();
+    const onlineState = useGameStore.getState().onlineState;
+    if (stored && onlineState) {
+      s.emit('room:join', {
+        code: stored.roomCode,
+        nickname: stored.nickname,
+        reconnectToken: stored.reconnectToken,
+      });
+    }
+  });
+
+  s.on('disconnect', () => {
+    set(state => ({
+      onlineState: state.onlineState
+        ? { ...state.onlineState, connectionStatus: 'reconnecting' as const }
+        : null,
+    }));
+  });
+
+  s.on('connect_error', (err) => {
+    if (err.message === 'Unauthorized') {
+      clearToken();
+      clearStoredRoom();
+      set({ onlineState: null });
+    }
+  });
 }
