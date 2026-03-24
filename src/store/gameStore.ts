@@ -27,6 +27,7 @@ import {
 } from '../game/engine';
 import { getEligibleNobles, getTotalGems } from '../game/selectors';
 import { MAX_GEMS_IN_HAND } from '../game/constants';
+import { getSocket } from '../online/socketClient';
 
 const initialAiState: AiState = {
   status: 'idle',
@@ -36,16 +37,29 @@ const initialAiState: AiState = {
   consecutiveFailures: 0,
 };
 
+export interface OnlineState {
+  roomCode: string;
+  myPlayerIndex: 0 | 1;
+  nickname: string;
+  opponentNickname: string;
+  reconnectToken: string;
+  connectionStatus: 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+  opponentConnected: boolean;
+}
+
 export interface GameStore extends GameState {
   pendingNobles: NobleTile[] | null;
   pendingDiscard: boolean;
   aiMode: boolean;
   aiConfig: AiConfig | null;
   aiState: AiState;
+  onlineState: OnlineState | null;
 
   initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig) => void;
   resetGame: () => void;
   setAiState: (state: Partial<AiState>) => void;
+  setOnlineState: (state: OnlineState | null) => void;
+  applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[]) => void;
   takeGems: (colors: ColoredGem[]) => void;
   take2Gems: (color: ColoredGem) => void;
   reserveCard: (source: DevelopmentCard | { fromDeck: CardTier }) => void;
@@ -74,6 +88,7 @@ const initialStoreState = {
   aiMode: false,
   aiConfig: null as AiConfig | null,
   aiState: { ...initialAiState },
+  onlineState: null as OnlineState | null,
 };
 
 function postActionChecks(state: GameState): GameState & { pendingNobles: NobleTile[] | null; pendingDiscard: boolean } {
@@ -124,8 +139,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({ aiState: { ...state.aiState, ...partial } }));
   },
 
+  setOnlineState: (onlineState: OnlineState | null) => {
+    set({ onlineState });
+  },
+
+  applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[]) => {
+    set({
+      ...gameState,
+      pendingDiscard: pendingDiscard ?? false,
+      pendingNobles: pendingNobles && pendingNobles.length > 0 ? pendingNobles : null,
+    });
+  },
+
   takeGems: (colors: ColoredGem[]) => {
     const state = get();
+    if (state.onlineState) {
+      getSocket().emit('game:action', {
+        code: state.onlineState.roomCode,
+        action: { type: 'takeGems', colors },
+      });
+      return;
+    }
+
     if (state.phase !== 'playing' && state.phase !== 'ending') return;
     if (state.pendingDiscard || state.pendingNobles) return;
     if (!canTakeGems(state, colors)) return;
@@ -136,6 +171,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   take2Gems: (color: ColoredGem) => {
     const state = get();
+    if (state.onlineState) {
+      getSocket().emit('game:action', {
+        code: state.onlineState.roomCode,
+        action: { type: 'take2Gems', color },
+      });
+      return;
+    }
+
     if (state.phase !== 'playing' && state.phase !== 'ending') return;
     if (state.pendingDiscard || state.pendingNobles) return;
     if (!canTake2Gems(state, color)) return;
@@ -146,6 +189,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   reserveCard: (source: DevelopmentCard | { fromDeck: CardTier }) => {
     const state = get();
+    if (state.onlineState) {
+      getSocket().emit('game:action', {
+        code: state.onlineState.roomCode,
+        action: 'fromDeck' in source
+          ? { type: 'reserveCard', fromDeck: source.fromDeck }
+          : { type: 'reserveCard', cardId: source.id },
+      });
+      return;
+    }
+
     if (state.phase !== 'playing' && state.phase !== 'ending') return;
     if (state.pendingDiscard || state.pendingNobles) return;
     if (!canReserveCard(state, source)) return;
@@ -156,6 +209,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   purchaseCard: (card: DevelopmentCard) => {
     const state = get();
+    if (state.onlineState) {
+      getSocket().emit('game:action', {
+        code: state.onlineState.roomCode,
+        action: { type: 'purchaseCard', cardId: card.id },
+      });
+      return;
+    }
+
     if (state.phase !== 'playing' && state.phase !== 'ending') return;
     if (state.pendingDiscard || state.pendingNobles) return;
     if (!canPurchaseCard(state, card)) return;
@@ -166,6 +227,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   discardGems: (gems: GemCost) => {
     const state = get();
+    if (state.onlineState) {
+      getSocket().emit('game:action', {
+        code: state.onlineState.roomCode,
+        action: { type: 'discardGems', gems },
+      });
+      return;
+    }
+
     if (!state.pendingDiscard) return;
 
     const newState = applyDiscardGems(state, gems);
@@ -197,6 +266,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   selectNoble: (noble: NobleTile) => {
     const state = get();
+    if (state.onlineState) {
+      getSocket().emit('game:action', {
+        code: state.onlineState.roomCode,
+        action: { type: 'selectNoble', nobleId: noble.id },
+      });
+      return;
+    }
+
     if (!state.pendingNobles) return;
     if (!state.pendingNobles.some(n => n.id === noble.id)) return;
 

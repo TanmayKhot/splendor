@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { AiProvider } from '../ai/aiTypes';
+import OnlineLobby from './OnlineLobby';
 
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-sonnet-4-20250514',
@@ -13,7 +14,7 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 export default function GameSetup() {
   const [p1Name, setP1Name] = useState('');
   const [p2Name, setP2Name] = useState('');
-  const [mode, setMode] = useState<'local' | 'ai'>('local');
+  const [mode, setMode] = useState<'local' | 'ai' | 'online'>('local');
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [model, setModel] = useState(DEFAULT_MODELS.anthropic);
   const [apiKey, setApiKey] = useState('');
@@ -23,7 +24,12 @@ export default function GameSetup() {
   const initGame = useGameStore(s => s.initGame);
 
   const isAi = mode === 'ai';
-  const canStart = p1Name.trim() !== '' && (!isAi ? p2Name.trim() !== '' : apiKey.trim() !== '');
+  const isOnline = mode === 'online';
+  const canStart = p1Name.trim() !== '' && (
+    isAi
+      ? (provider === 'anthropic' || apiKey.trim() !== '')
+      : !isOnline && p2Name.trim() !== ''
+  );
 
   function handleProviderChange(newProvider: AiProvider) {
     setProvider(newProvider);
@@ -38,7 +44,7 @@ export default function GameSetup() {
       const body = {
         provider,
         model,
-        apiKey,
+        ...(apiKey ? { apiKey } : {}),
         baseUrl: provider === 'custom' ? baseUrl : undefined,
         ...(provider === 'anthropic'
           ? { system: 'Reply with OK.', messages: [{ role: 'user', content: 'ping' }] }
@@ -80,97 +86,113 @@ export default function GameSetup() {
       <div className="mode-toggle">
         <button
           type="button"
-          className={`mode-option ${!isAi ? 'active' : ''}`}
+          className={`mode-option ${mode === 'local' ? 'active' : ''}`}
           onClick={() => setMode('local')}
         >
           2 Players (Local)
         </button>
         <button
           type="button"
-          className={`mode-option ${isAi ? 'active' : ''}`}
+          className={`mode-option ${mode === 'ai' ? 'active' : ''}`}
           onClick={() => setMode('ai')}
         >
           1 Player vs AI
         </button>
+        <button
+          type="button"
+          className={`mode-option ${mode === 'online' ? 'active' : ''}`}
+          onClick={() => setMode('online')}
+        >
+          Play Online
+        </button>
       </div>
 
-      <input
-        placeholder="Player 1 name"
-        value={p1Name}
-        onChange={e => setP1Name(e.target.value)}
-      />
-
-      {!isAi ? (
-        <input
-          placeholder="Player 2 name"
-          value={p2Name}
-          onChange={e => setP2Name(e.target.value)}
-        />
+      {isOnline ? (
+        <OnlineLobby />
       ) : (
         <>
-          <div className="ai-player-label">Player 2: AI Player</div>
+          <input
+            placeholder="Player 1 name"
+            value={p1Name}
+            onChange={e => setP1Name(e.target.value)}
+          />
 
-          <div className="ai-config">
-            <label className="ai-field">
-              <span>Provider</span>
-              <select value={provider} onChange={e => handleProviderChange(e.target.value as AiProvider)}>
-                <option value="anthropic">Anthropic</option>
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="openrouter">OpenRouter</option>
-                <option value="custom">Custom</option>
-              </select>
-            </label>
+          {!isAi ? (
+            <input
+              placeholder="Player 2 name"
+              value={p2Name}
+              onChange={e => setP2Name(e.target.value)}
+            />
+          ) : (
+            <>
+              <div className="ai-player-label">Player 2: AI Player</div>
 
-            <label className="ai-field">
-              <span>Model</span>
-              <input
-                value={model}
-                onChange={e => setModel(e.target.value)}
-                placeholder="Model name"
-              />
-            </label>
+              <div className="ai-config">
+                <label className="ai-field">
+                  <span>Provider</span>
+                  <select value={provider} onChange={e => handleProviderChange(e.target.value as AiProvider)}>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
 
-            <label className="ai-field">
-              <span>API Key</span>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={e => { setApiKey(e.target.value); setTestStatus('idle'); }}
-                placeholder="Enter API key"
-              />
-            </label>
+                <label className="ai-field">
+                  <span>Model</span>
+                  <input
+                    value={model}
+                    onChange={e => setModel(e.target.value)}
+                    placeholder="Model name"
+                  />
+                </label>
 
-            {provider === 'custom' && (
-              <label className="ai-field">
-                <span>Base URL</span>
-                <input
-                  value={baseUrl}
-                  onChange={e => setBaseUrl(e.target.value)}
-                  placeholder="https://api.example.com/v1"
-                />
-              </label>
-            )}
+                <label className="ai-field">
+                  <span>API Key{provider === 'anthropic' ? ' (optional)' : ''}</span>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={e => { setApiKey(e.target.value); setTestStatus('idle'); }}
+                    placeholder={provider === 'anthropic' ? 'Leave blank to use hosted key' : 'Enter API key'}
+                  />
+                  {provider === 'anthropic' && (
+                    <span className="ai-field-hint">Leave blank to use the hosted key (rate-limited).</span>
+                  )}
+                </label>
 
-            <div className="test-connection">
-              <button
-                type="button"
-                className="btn-test"
-                disabled={!apiKey.trim() || testStatus === 'testing'}
-                onClick={testConnection}
-              >
-                {testStatus === 'testing' ? 'Testing...' : 'Test Connection'}
-              </button>
-              {testStatus === 'success' && <span className="test-success">Connected</span>}
-              {testStatus === 'error' && <span className="test-error">{testError || 'Failed'}</span>}
-            </div>
-          </div>
+                {provider === 'custom' && (
+                  <label className="ai-field">
+                    <span>Base URL</span>
+                    <input
+                      value={baseUrl}
+                      onChange={e => setBaseUrl(e.target.value)}
+                      placeholder="https://api.example.com/v1"
+                    />
+                  </label>
+                )}
+
+                <div className="test-connection">
+                  <button
+                    type="button"
+                    className="btn-test"
+                    disabled={testStatus === 'testing'}
+                    onClick={testConnection}
+                  >
+                    {testStatus === 'testing' ? 'Testing...' : 'Test Connection'}
+                  </button>
+                  {testStatus === 'success' && <span className="test-success">Connected</span>}
+                  {testStatus === 'error' && <span className="test-error">{testError || 'Failed'}</span>}
+                </div>
+              </div>
+            </>
+          )}
+
+          <button disabled={!canStart} onClick={handleStart}>
+            Start Game
+          </button>
         </>
       )}
-
-      <button disabled={!canStart} onClick={handleStart}>
-        Start Game
-      </button>
     </div>
   );
 }
