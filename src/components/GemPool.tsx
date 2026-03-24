@@ -11,10 +11,13 @@ export default function GemPool() {
   const take2Gems = useGameStore(s => s.take2Gems);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
+  const onlineState = useGameStore(s => s.onlineState);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
   const [selected, setSelected] = useState<ColoredGem[]>([]);
 
-  const blocked = !!pendingDiscard || !!pendingNobles;
+  const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
+  const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
 
   const isTake2 = selected.length === 2 && selected[0] === selected[1];
 

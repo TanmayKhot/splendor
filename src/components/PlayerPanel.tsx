@@ -13,11 +13,13 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const aiMode = useGameStore(s => s.aiMode);
   const aiModel = useGameStore(s => s.aiConfig?.model);
+  const onlineState = useGameStore(s => s.onlineState);
 
   const isActive = currentPlayerIndex === playerIndex;
+  const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const points = getPlayerPoints(player);
   const bonuses = getPlayerBonuses(player);
-  const blocked = !!pendingDiscard || !!pendingNobles;
+  const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
   const totalGems = ALL_GEMS.reduce((sum, c) => sum + (player.gems[c] ?? 0), 0);
 
   return (

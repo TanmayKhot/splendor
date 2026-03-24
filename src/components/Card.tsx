@@ -15,9 +15,12 @@ export default function Card({ card, showActions = true, showLabel = false }: Ca
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const purchaseCard = useGameStore(s => s.purchaseCard);
   const reserveCard = useGameStore(s => s.reserveCard);
+  const onlineState = useGameStore(s => s.onlineState);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
   const affordable = canAfford(card, player);
-  const blocked = !!pendingDiscard || !!pendingNobles;
+  const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
+  const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
 
   const costs = COLORED_GEMS.filter(c => (card.cost[c] ?? 0) > 0);
 

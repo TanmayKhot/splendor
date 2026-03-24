@@ -12,6 +12,7 @@ import GameOver from './components/GameOver';
 import AiPlayerController from './components/AiPlayerController';
 import AiReasoningPanel from './components/AiReasoningPanel';
 import PasswordGate from './components/PasswordGate';
+import ConnectionBanner from './components/ConnectionBanner';
 
 function AppContent() {
   const phase = useGameStore(s => s.phase);
@@ -19,6 +20,7 @@ function AppContent() {
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const aiMode = useGameStore(s => s.aiMode);
   const aiThinking = useGameStore(s => s.aiMode && s.currentPlayerIndex === 1 && s.aiState.status === 'thinking');
+  const onlineState = useGameStore(s => s.onlineState);
 
   if (phase === 'setup') {
     return (
@@ -39,25 +41,33 @@ function AppContent() {
   }
 
   return (
-    <div className={`app ${aiThinking ? 'ai-turn-active' : ''}`}>
-      <h1>Splendor</h1>
-      <TurnIndicator />
-      {aiMode && <AiPlayerController />}
-      <div className="board">
-        <div className="board-main">
-          <NobleRow />
-          <CardTiers />
-          <GemPool />
+    <>
+      {onlineState && (
+        <ConnectionBanner
+          connectionStatus={onlineState.connectionStatus}
+          opponentConnected={onlineState.opponentConnected}
+        />
+      )}
+      <div className={`app ${aiThinking ? 'ai-turn-active' : ''}`}>
+        <h1>Splendor</h1>
+        <TurnIndicator />
+        {aiMode && <AiPlayerController />}
+        <div className="board">
+          <div className="board-main">
+            <NobleRow />
+            <CardTiers />
+            <GemPool />
+          </div>
+          <div className="board-side">
+            <PlayerPanel playerIndex={0} />
+            <PlayerPanel playerIndex={1} />
+            {aiMode && <AiReasoningPanel />}
+          </div>
         </div>
-        <div className="board-side">
-          <PlayerPanel playerIndex={0} />
-          <PlayerPanel playerIndex={1} />
-          {aiMode && <AiReasoningPanel />}
-        </div>
+        {pendingDiscard && <DiscardModal />}
+        {pendingNobles && <NobleModal />}
       </div>
-      {pendingDiscard && <DiscardModal />}
-      {pendingNobles && <NobleModal />}
-    </div>
+    </>
   );
 }
 

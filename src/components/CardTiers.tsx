@@ -11,8 +11,11 @@ export default function CardTiers() {
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const aiMode = useGameStore(s => s.aiMode);
+  const onlineState = useGameStore(s => s.onlineState);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
-  const blocked = !!pendingDiscard || !!pendingNobles;
+  const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
+  const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
 
   return (
     <div className="card-tiers">
