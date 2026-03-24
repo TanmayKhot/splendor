@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   createRoom,
   joinRoom,
@@ -235,15 +235,13 @@ describe('roomManager', () => {
       // Set up player 0 to qualify for a noble after taking gems
       const noble = state.board.nobles[0];
       // Give player enough purchased cards to meet noble requirement
-      const { ColoredGems } = require('../src/game/types') as any;
-      const colors = Object.keys(noble.requirement) as string[];
 
       // Give player purchased cards matching noble requirement
       let cardId = 900;
       for (const [color, count] of Object.entries(noble.requirement)) {
         for (let i = 0; i < (count as number); i++) {
           state.players[0].purchased.push({
-            id: cardId++,
+            id: String(cardId++),
             tier: 1 as const,
             prestigePoints: 0,
             gemBonus: color as any,

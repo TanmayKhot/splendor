@@ -381,7 +381,7 @@ export function getRoomCount(): number {
 
 // For testing: clear all rooms
 export function _resetForTesting(): void {
-  for (const [key, timer] of graceTimers.entries()) {
+  for (const [, timer] of graceTimers.entries()) {
     clearTimeout(timer);
   }
   graceTimers.clear();
