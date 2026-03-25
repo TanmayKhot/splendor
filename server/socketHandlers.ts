@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import * as roomManager from './roomManager';
+import * as roomManager from './roomManager.js';
 
 // Per-IP rate limiting for room creation
 const createTimestamps = new Map<string, number[]>();

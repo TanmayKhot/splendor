@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { GameState, Action, NobleTile, GemCost, GamePhase } from '../src/game/types';
+import type { GameState, Action, NobleTile, GemCost, GamePhase } from '../src/game/types.js';
 import {
   generateInitialState,
   canTakeGems,
@@ -14,9 +14,9 @@ import {
   applyNobleVisit,
   shouldTriggerEndGame,
   advanceTurn,
-} from '../src/game/engine';
-import { getTotalGems, getEligibleNobles } from '../src/game/selectors';
-import { MAX_GEMS_IN_HAND } from '../src/game/constants';
+} from '../src/game/engine.js';
+import { getTotalGems, getEligibleNobles } from '../src/game/selectors.js';
+import { MAX_GEMS_IN_HAND } from '../src/game/constants.js';
 
 export interface RoomPlayer {
   socketId: string;

@@ -5,9 +5,9 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
-import { validatePassword, generateToken, authMiddleware, socketAuthMiddleware } from './auth';
-import { registerSocketHandlers } from './socketHandlers';
-import * as roomManager from './roomManager';
+import { validatePassword, generateToken, authMiddleware, socketAuthMiddleware } from './auth.js';
+import { registerSocketHandlers } from './socketHandlers.js';
+import * as roomManager from './roomManager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
