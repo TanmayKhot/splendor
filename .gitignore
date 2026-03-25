@@ -6,3 +6,7 @@ tsconfig.tsbuildinfo
 # Build artifacts from server compilation (src/game included in tsconfig.server.json)
 src/game/*.js
 src/game/*.js.map
+
+# Local-only files
+deploy.md
+logs/
