@@ -170,7 +170,7 @@ registerSocketHandlers(io);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
   // Catch-all AFTER all API routes — serves index.html for client-side routing
-  app.get('*', (_req, res) => {
+  app.get('/{*splat}', (_req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }
