@@ -1,11 +1,11 @@
-# Stage 1 — build frontend + compile server
+# Stage 1 — build frontend + bundle server
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
-RUN npm run build:server
+ARG CACHE_BUST=1
+RUN npm run build && npm run build:server
 
 # Stage 2 — lean runtime
 FROM node:20-alpine AS runtime
