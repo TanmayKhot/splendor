@@ -25,7 +25,7 @@ app.use(express.json({ limit: '1mb' }));
 // --- Public endpoints (no auth) ---
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', rooms: roomManager.getRoomCount() });
+  res.json({ status: 'ok', rooms: roomManager.getRoomCount(), passwordRequired: !!process.env.SITE_PASSWORD });
 });
 
 app.post('/api/auth', (req, res) => {

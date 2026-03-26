@@ -29,8 +29,9 @@ export default function PasswordGate({ children }: PasswordGateProps) {
   useEffect(() => {
     // Check if site requires password
     fetch('/api/health')
-      .then(res => {
-        if (res.status === 401) {
+      .then(res => res.json())
+      .then(data => {
+        if (data.passwordRequired) {
           // Server requires auth — check for existing token
           const token = getToken();
           if (token && !isTokenExpired(token)) {
