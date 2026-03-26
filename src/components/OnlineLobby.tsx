@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getSocket, connectSocket, setStoredRoom, getStoredRoom, clearStoredRoom,
   setupSocketListeners, setupVisibilityHandler,
@@ -27,6 +27,7 @@ export default function OnlineLobby() {
   const [joinCode, setJoinCode] = useState('');
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [myPlayerIndex, setMyPlayerIndex] = useState<number>(-1);
+  const myPlayerIndexRef = useRef<number>(-1);
   const [reconnectToken, setReconnectToken] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -64,6 +65,7 @@ export default function OnlineLobby() {
     function onCreated(data: { code: string; playerIndex: number; reconnectToken: string }) {
       setRoomCode(data.code);
       setMyPlayerIndex(data.playerIndex);
+      myPlayerIndexRef.current = data.playerIndex;
       setReconnectToken(data.reconnectToken);
       setPlayers([{ nickname, playerIndex: data.playerIndex, connected: true }]);
       setStoredRoom({ roomCode: data.code, reconnectToken: data.reconnectToken, nickname });
@@ -74,6 +76,7 @@ export default function OnlineLobby() {
     function onJoined(data: { code: string; players: PlayerInfo[]; playerIndex: number; reconnectToken: string }) {
       setRoomCode(data.code);
       setMyPlayerIndex(data.playerIndex);
+      myPlayerIndexRef.current = data.playerIndex;
       setReconnectToken(data.reconnectToken);
       setPlayers(data.players);
       const myNick = data.players.find(p => p.playerIndex === data.playerIndex)?.nickname || nickname;
@@ -101,8 +104,8 @@ export default function OnlineLobby() {
       // Apply the full server state to the store
       applyServerState(gs, data.pendingDiscard, data.pendingNobles);
 
-      // Build OnlineState — use component state with storedRoom as fallback
-      const currentMyIndex = myPlayerIndex >= 0 ? myPlayerIndex : 0;
+      // Build OnlineState — use ref (not stale closure) with storedRoom as fallback
+      const currentMyIndex = myPlayerIndexRef.current >= 0 ? myPlayerIndexRef.current : 0;
       const opponentIdx = currentMyIndex === 0 ? 1 : 0;
 
       setOnlineState({
