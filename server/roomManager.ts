@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { GameState, Action, NobleTile, GemCost, GamePhase } from '../src/game/types.js';
+import type { GameState, NobleTile, GemCost, GamePhase } from '../src/game/types.js';
 import {
   generateInitialState,
   canTakeGems,
@@ -160,7 +160,28 @@ export function startGame(code: string, socketId: string): RoomResult<{ gameStat
   return { gameState };
 }
 
-export function applyAction(code: string, socketId: string, action: Action): RoomResult<{ gameState: GameState; pendingDiscard: boolean; pendingNobles: NobleTile[] }> {
+// Wire action types sent by the client (IDs instead of full objects)
+type WireAction =
+  | { type: 'takeGems'; colors: string[] }
+  | { type: 'take2Gems'; color: string }
+  | { type: 'reserveCard'; cardId?: string; fromDeck?: number }
+  | { type: 'purchaseCard'; cardId: string }
+  | { type: 'discardGems'; gems: GemCost }
+  | { type: 'selectNoble'; nobleId: string };
+
+function findCardById(state: GameState, cardId: string) {
+  for (const tier of state.board.visibleCards) {
+    const card = tier.find(c => c.id === cardId);
+    if (card) return card;
+  }
+  for (const p of state.players) {
+    const card = p.reserved.find(c => c.id === cardId);
+    if (card) return card;
+  }
+  return undefined;
+}
+
+export function applyAction(code: string, socketId: string, action: WireAction): RoomResult<{ gameState: GameState; pendingDiscard: boolean; pendingNobles: NobleTile[] }> {
   const room = rooms.get(code);
   if (!room || !room.gameState) return { error: 'ROOM_NOT_FOUND' };
 
@@ -180,7 +201,9 @@ export function applyAction(code: string, socketId: string, action: Action): Roo
   if (room.pendingNobles.length > 0) {
     if (action.type !== 'selectNoble') return { error: 'INVALID_ACTION' };
     if (player.playerIndex !== state.currentPlayerIndex) return { error: 'NOT_YOUR_TURN' };
-    return applyNobleAction(room, action.noble);
+    const noble = state.board.nobles.find(n => n.id === action.nobleId);
+    if (!noble) return { error: 'INVALID_ACTION' };
+    return applyNobleAction(room, noble);
   }
 
   // Normal action — check turn
@@ -192,25 +215,33 @@ export function applyAction(code: string, socketId: string, action: Action): Roo
     return { error: 'INVALID_ACTION' };
   }
 
-  // Validate and apply
+  // Validate and apply — resolve IDs to full objects
   let newState: GameState;
   switch (action.type) {
     case 'takeGems':
-      if (!canTakeGems(state, action.colors)) return { error: 'INVALID_ACTION' };
-      newState = applyTakeGems(state, action.colors);
+      if (!canTakeGems(state, action.colors as any)) return { error: 'INVALID_ACTION' };
+      newState = applyTakeGems(state, action.colors as any);
       break;
     case 'take2Gems':
-      if (!canTake2Gems(state, action.color)) return { error: 'INVALID_ACTION' };
-      newState = applyTake2Gems(state, action.color);
+      if (!canTake2Gems(state, action.color as any)) return { error: 'INVALID_ACTION' };
+      newState = applyTake2Gems(state, action.color as any);
       break;
-    case 'reserveCard':
-      if (!canReserveCard(state, action.source)) return { error: 'INVALID_ACTION' };
-      newState = applyReserveCard(state, action.source);
+    case 'reserveCard': {
+      const source = action.fromDeck != null
+        ? { fromDeck: action.fromDeck as any }
+        : action.cardId ? findCardById(state, action.cardId) : undefined;
+      if (!source) return { error: 'INVALID_ACTION' };
+      if (!canReserveCard(state, source)) return { error: 'INVALID_ACTION' };
+      newState = applyReserveCard(state, source);
       break;
-    case 'purchaseCard':
-      if (!canPurchaseCard(state, action.card)) return { error: 'INVALID_ACTION' };
-      newState = applyPurchaseCard(state, action.card);
+    }
+    case 'purchaseCard': {
+      const card = findCardById(state, action.cardId);
+      if (!card) return { error: 'INVALID_ACTION' };
+      if (!canPurchaseCard(state, card)) return { error: 'INVALID_ACTION' };
+      newState = applyPurchaseCard(state, card);
       break;
+    }
     default:
       return { error: 'INVALID_ACTION' };
   }
