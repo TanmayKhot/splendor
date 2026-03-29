@@ -42,7 +42,7 @@ button:not(:disabled):hover {
 
 /* ── App layout ────────────────────────────────────── */
 .app {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 12px 16px;
   max-height: 100vh;
@@ -237,7 +237,7 @@ button:not(:disabled):hover {
 /* ── Board layout ──────────────────────────────────── */
 .board {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr 440px;
   gap: 16px;
 }
 
@@ -637,11 +637,17 @@ button:not(:disabled):hover {
   margin-bottom: 4px;
 }
 
-.player-gems {
+.player-gem-grid {
   display: flex;
   gap: 4px;
-  flex-wrap: wrap;
   margin-bottom: 6px;
+}
+
+.player-gem-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
 .player-gem {
@@ -656,10 +662,10 @@ button:not(:disabled):hover {
   box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
-.player-bonuses {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
+.player-gem.empty {
+  background: transparent;
+  box-shadow: none;
+  border: 1.5px dashed rgba(255,255,255,0.12);
 }
 
 .player-bonus {
@@ -677,6 +683,11 @@ button:not(:disabled):hover {
 .player-bonus.has-bonus {
   opacity: 1;
   box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.player-bonus-placeholder {
+  width: 28px;
+  height: 28px;
 }
 
 .player-nobles {

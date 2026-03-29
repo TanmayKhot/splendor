@@ -55,28 +55,27 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
           {' '}<span className="player-points">({points} pts)</span>
         </h3>
 
-        {/* Gems */}
+        {/* Gems + Bonuses aligned grid */}
         <div className="player-gems-header">Gems: {totalGems}/10</div>
-        <div className="player-gems">
-          {ALL_GEMS.map(color => (
-            player.gems[color] > 0 ? (
-              <span key={color} className={`player-gem gem-${color}`}>
-                {player.gems[color]}
-              </span>
-            ) : null
-          ))}
-        </div>
-
-        {/* Bonuses */}
-        <div className="player-bonuses">
+        <div className="player-gem-grid">
           {COLORED_GEMS.map(color => (
-            <span
-              key={color}
-              className={`player-bonus gem-${color} ${bonuses[color] > 0 ? 'has-bonus' : ''}`}
-            >
-              {bonuses[color]}
-            </span>
+            <div key={color} className="player-gem-col">
+              <span className={`player-gem gem-${color} ${player.gems[color] > 0 ? '' : 'empty'}`}>
+                {player.gems[color] > 0 ? player.gems[color] : ''}
+              </span>
+              <span
+                className={`player-bonus gem-${color} ${bonuses[color] > 0 ? 'has-bonus' : ''}`}
+              >
+                {bonuses[color]}
+              </span>
+            </div>
           ))}
+          {player.gems.gold > 0 && (
+            <div className="player-gem-col">
+              <span className="player-gem gem-gold">{player.gems.gold}</span>
+              <span className="player-bonus-placeholder" />
+            </div>
+          )}
         </div>
 
         {/* Nobles */}
