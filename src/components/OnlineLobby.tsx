@@ -97,12 +97,12 @@ export default function OnlineLobby() {
       setError(msg);
     }
 
-    function onGameState(data: { gameState: any; pendingDiscard: boolean; pendingNobles: any[] }) {
+    function onGameState(data: { gameState: any; pendingDiscard: boolean; pendingNobles: any[]; lastMoves?: [any, any] }) {
       const gs = data.gameState;
       const storedRoom = getStoredRoom();
 
       // Apply the full server state to the store
-      applyServerState(gs, data.pendingDiscard, data.pendingNobles);
+      applyServerState(gs, data.pendingDiscard, data.pendingNobles, data.lastMoves);
 
       // Build OnlineState — use ref (not stale closure) with storedRoom as fallback
       const currentMyIndex = myPlayerIndexRef.current >= 0 ? myPlayerIndexRef.current : 0;

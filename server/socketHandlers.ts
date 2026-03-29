@@ -117,6 +117,7 @@ export function registerSocketHandlers(io: Server): void {
         gameState: result.gameState,
         pendingDiscard: result.pendingDiscard,
         pendingNobles: result.pendingNobles,
+        lastMoves: result.lastMoves,
       });
     });
 

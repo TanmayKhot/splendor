@@ -29,6 +29,12 @@ import { getEligibleNobles, getTotalGems } from '../game/selectors';
 import { MAX_GEMS_IN_HAND } from '../game/constants';
 import { getSocket } from '../online/socketClient';
 
+export type LastMove =
+  | { type: 'takeGems'; colors: ColoredGem[] }
+  | { type: 'take2Gems'; color: ColoredGem }
+  | { type: 'reserveCard'; gemBonus: ColoredGem; prestigePoints: number }
+  | { type: 'purchaseCard'; gemBonus: ColoredGem; prestigePoints: number; cost: Partial<Record<ColoredGem, number>> };
+
 const initialAiState: AiState = {
   status: 'idle',
   reasoning: [],
@@ -50,6 +56,7 @@ export interface OnlineState {
 export interface GameStore extends GameState {
   pendingNobles: NobleTile[] | null;
   pendingDiscard: boolean;
+  lastMoves: [LastMove | null, LastMove | null];
   aiMode: boolean;
   aiConfig: AiConfig | null;
   aiState: AiState;
@@ -59,7 +66,7 @@ export interface GameStore extends GameState {
   resetGame: () => void;
   setAiState: (state: Partial<AiState>) => void;
   setOnlineState: (state: OnlineState | null) => void;
-  applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[]) => void;
+  applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[], lastMoves?: [LastMove | null, LastMove | null]) => void;
   takeGems: (colors: ColoredGem[]) => void;
   take2Gems: (color: ColoredGem) => void;
   reserveCard: (source: DevelopmentCard | { fromDeck: CardTier }) => void;
@@ -85,11 +92,18 @@ const initialStoreState = {
   turnCount: 0,
   pendingNobles: null as NobleTile[] | null,
   pendingDiscard: false,
+  lastMoves: [null, null] as [LastMove | null, LastMove | null],
   aiMode: false,
   aiConfig: null as AiConfig | null,
   aiState: { ...initialAiState },
   onlineState: null as OnlineState | null,
 };
+
+function setLastMove(lastMoves: [LastMove | null, LastMove | null], playerIndex: 0 | 1, move: LastMove): [LastMove | null, LastMove | null] {
+  const updated: [LastMove | null, LastMove | null] = [...lastMoves];
+  updated[playerIndex] = move;
+  return updated;
+}
 
 function postActionChecks(state: GameState): GameState & { pendingNobles: NobleTile[] | null; pendingDiscard: boolean } {
   const player = state.players[state.currentPlayerIndex];
@@ -143,11 +157,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ onlineState });
   },
 
-  applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[]) => {
+  applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[], lastMoves?: [LastMove | null, LastMove | null]) => {
     set({
       ...gameState,
       pendingDiscard: pendingDiscard ?? false,
       pendingNobles: pendingNobles && pendingNobles.length > 0 ? pendingNobles : null,
+      lastMoves: lastMoves ?? get().lastMoves,
     });
   },
 
@@ -166,7 +181,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!canTakeGems(state, colors)) return;
 
     const newState = applyTakeGems(state, colors);
-    set(postActionChecks(newState));
+    const lastMoves = setLastMove(state.lastMoves, state.currentPlayerIndex, { type: 'takeGems', colors });
+    set({ ...postActionChecks(newState), lastMoves });
   },
 
   take2Gems: (color: ColoredGem) => {
@@ -184,7 +200,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!canTake2Gems(state, color)) return;
 
     const newState = applyTake2Gems(state, color);
-    set(postActionChecks(newState));
+    const lastMoves = setLastMove(state.lastMoves, state.currentPlayerIndex, { type: 'take2Gems', color });
+    set({ ...postActionChecks(newState), lastMoves });
   },
 
   reserveCard: (source: DevelopmentCard | { fromDeck: CardTier }) => {
@@ -203,8 +220,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (state.pendingDiscard || state.pendingNobles) return;
     if (!canReserveCard(state, source)) return;
 
+    const card = 'fromDeck' in source ? undefined : source;
     const newState = applyReserveCard(state, source);
-    set(postActionChecks(newState));
+    const lastMoves = setLastMove(state.lastMoves, state.currentPlayerIndex, {
+      type: 'reserveCard',
+      gemBonus: card?.gemBonus ?? 'white',
+      prestigePoints: card?.prestigePoints ?? 0,
+    });
+    set({ ...postActionChecks(newState), lastMoves });
   },
 
   purchaseCard: (card: DevelopmentCard) => {
@@ -222,7 +245,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!canPurchaseCard(state, card)) return;
 
     const newState = applyPurchaseCard(state, card);
-    set(postActionChecks(newState));
+    const lastMoves = setLastMove(state.lastMoves, state.currentPlayerIndex, {
+      type: 'purchaseCard',
+      gemBonus: card.gemBonus,
+      prestigePoints: card.prestigePoints,
+      cost: card.cost,
+    });
+    set({ ...postActionChecks(newState), lastMoves });
   },
 
   discardGems: (gems: GemCost) => {
