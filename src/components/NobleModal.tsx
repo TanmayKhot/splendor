@@ -23,8 +23,24 @@ function NobleOption({ noble, onSelect }: { noble: NobleTile; onSelect: () => vo
 export default function NobleModal() {
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const selectNoble = useGameStore(s => s.selectNoble);
+  const onlineState = useGameStore(s => s.onlineState);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  const currentPlayerName = useGameStore(s => s.players[currentPlayerIndex].name);
 
   if (!pendingNobles) return null;
+
+  const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
+
+  if (!isMyTurn) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal">
+          <h2>Noble Visit</h2>
+          <p>{currentPlayerName} is choosing a noble card...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay">
