@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { ColoredGem, GemColor } from '../game/types';
 import { COLORED_GEMS } from '../game/constants';
 import { useGameStore } from '../store/gameStore';
+import { useAnimation } from './AnimationProvider';
 
 const ALL_GEMS: GemColor[] = [...COLORED_GEMS, 'gold'];
 
@@ -15,6 +16,11 @@ export default function GemPool() {
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
   const [selected, setSelected] = useState<ColoredGem[]>([]);
+  const { registerGemSource } = useAnimation();
+
+  const gemRef = useCallback((color: GemColor) => (el: HTMLElement | null) => {
+    registerGemSource(color, el);
+  }, [registerGemSource]);
 
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
@@ -68,6 +74,8 @@ export default function GemPool() {
         {ALL_GEMS.map(color => (
           <button
             key={color}
+            ref={gemRef(color)}
+            data-gem-source={color}
             className={`gem-token gem-${color} ${selected.includes(color as ColoredGem) ? 'selected' : ''}`}
             disabled={blocked || color === 'gold' || gemSupply[color] === 0}
             onClick={() => handleClick(color)}

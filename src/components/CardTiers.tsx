@@ -1,5 +1,6 @@
 import { useGameStore } from '../store/gameStore';
 import type { CardTier } from '../game/types';
+import { AnimatePresence, motion } from 'framer-motion';
 import Card from './Card';
 
 const TIERS: CardTier[] = [3, 2, 1]; // display highest tier first
@@ -34,9 +35,21 @@ export default function CardTiers() {
               <span>Tier {tier}</span>
               <span className="deck-count">{deckSize}</span>
             </button>
-            {cards.map(card => (
-              <Card key={card.id} card={card} showLabel={aiMode} />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {cards.map(card => (
+                <motion.div
+                  key={card.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={{ duration: 0.25 }}
+                  style={{ flex: 1, display: 'flex', minWidth: 0 }}
+                >
+                  <Card card={card} showLabel={aiMode} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         );
       })}

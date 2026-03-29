@@ -1273,3 +1273,37 @@ button:not(:disabled):hover {
   background: #e67e22;
   color: #fff;
 }
+
+/* ── Flying animations overlay ─────────────────────── */
+.fly-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.flying-item {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  will-change: transform, opacity;
+}
+
+.flying-gem {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.flying-card {
+  width: 40px;
+  height: 52px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}

@@ -2,6 +2,7 @@ import { useGameStore } from '../store/gameStore';
 import type { NobleTile } from '../game/types';
 import type { ColoredGem } from '../game/types';
 import { COLORED_GEMS } from '../game/constants';
+import { AnimatePresence, motion } from 'framer-motion';
 
 function NobleCard({ noble }: { noble: NobleTile }) {
   const reqs = COLORED_GEMS.filter(c => (noble.requirement[c] ?? 0) > 0);
@@ -24,7 +25,19 @@ export default function NobleRow() {
   return (
     <div className="noble-row">
       <h3>Nobles</h3>
-      {nobles.map(n => <NobleCard key={n.id} noble={n} />)}
+      <AnimatePresence>
+        {nobles.map(n => (
+          <motion.div
+            key={n.id}
+            layout
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ duration: 0.3 }}
+          >
+            <NobleCard noble={n} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

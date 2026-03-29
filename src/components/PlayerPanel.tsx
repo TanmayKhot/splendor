@@ -45,7 +45,7 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
   const totalGems = ALL_GEMS.reduce((sum, c) => sum + (player.gems[c] ?? 0), 0);
 
   return (
-    <div className="player-panel-wrapper">
+    <div className="player-panel-wrapper" data-player={playerIndex}>
       <div className={`player-panel ${isActive ? 'active' : ''}`}>
         <h3>
           {player.name}
@@ -60,7 +60,11 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
         <div className="player-gem-grid">
           {COLORED_GEMS.map(color => (
             <div key={color} className="player-gem-col">
-              <span className={`player-gem gem-${color} ${player.gems[color] > 0 ? '' : 'empty'}`}>
+              <span
+                className={`player-gem gem-${color} ${player.gems[color] > 0 ? '' : 'empty'}`}
+                data-player={playerIndex}
+                data-gem-dest={color}
+              >
                 {player.gems[color] > 0 ? player.gems[color] : ''}
               </span>
               <span

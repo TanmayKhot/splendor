@@ -13,6 +13,7 @@ import AiPlayerController from './components/AiPlayerController';
 import AiReasoningPanel from './components/AiReasoningPanel';
 import PasswordGate from './components/PasswordGate';
 import ConnectionBanner from './components/ConnectionBanner';
+import AnimationProvider from './components/AnimationProvider';
 
 function AppContent() {
   const phase = useGameStore(s => s.phase);
@@ -74,7 +75,9 @@ function AppContent() {
 function App() {
   return (
     <PasswordGate>
-      <AppContent />
+      <AnimationProvider>
+        <AppContent />
+      </AnimationProvider>
     </PasswordGate>
   );
 }
