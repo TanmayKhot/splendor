@@ -369,6 +369,13 @@ button:not(:disabled):hover {
   background: rgba(26, 37, 53, 0.3);
 }
 
+.card-slot-highlighted .card {
+  box-shadow:
+    0 0 12px 4px rgba(245, 197, 24, 0.7),
+    0 0 24px 8px rgba(245, 197, 24, 0.4);
+  border-color: #f5c518;
+}
+
 .card {
   background: #1a2535;
   border: 1.5px solid #2a3a55;

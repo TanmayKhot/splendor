@@ -29,7 +29,7 @@ interface AnimationContextValue {
   registerCardSource: (cardId: string, el: HTMLElement | null, cardData?: DevelopmentCard) => void;
   /** Gems currently animating toward a player — key: `${playerIndex}-${color}`, value: count */
   inFlightGems: Map<string, number>;
-  /** Card IDs that should be hidden in tiers until animation completes */
+  /** Card IDs that should be hidden (invisible placeholder) until fly animation completes */
   suppressedCardIds: Set<string>;
 }
 
@@ -275,11 +275,11 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                 });
               });
             } else if (item.type === 'card') {
-              // Capture new card IDs in closure for unsuppression
+              // Capture new card IDs in closure for unhighlighting
               const newCardIds = [...currentCardIds].filter(cid => !prevVisibleCardIdsRef.current.has(cid));
               flyCompleteCallbacks.current.set(id, () => {
                 if (newCardIds.length > 0) {
-                  setSuppressedCardIds(prev => {
+                  setHighlightedCardIds(prev => {
                     const next = new Set(prev);
                     newCardIds.forEach(cid => next.delete(cid));
                     return next;
@@ -299,7 +299,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
   }
 
   return (
-    <AnimationContext.Provider value={{ registerGemSource, registerCardSource, inFlightGems, suppressedCardIds }}>
+    <AnimationContext.Provider value={{ registerGemSource, registerCardSource, inFlightGems, highlightedCardIds }}>
       {children}
       {/* Flying items overlay */}
       <div className="fly-overlay">
