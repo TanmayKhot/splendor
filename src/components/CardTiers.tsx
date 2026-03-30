@@ -2,6 +2,7 @@ import { useGameStore } from '../store/gameStore';
 import type { CardTier } from '../game/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import Card from './Card';
+import { useAnimation } from './AnimationProvider';
 
 const TIERS: CardTier[] = [3, 2, 1]; // display highest tier first
 
@@ -14,6 +15,8 @@ export default function CardTiers() {
   const aiMode = useGameStore(s => s.aiMode);
   const onlineState = useGameStore(s => s.onlineState);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+
+  const { suppressedCardIds } = useAnimation();
 
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
@@ -36,19 +39,29 @@ export default function CardTiers() {
               <span className="deck-count">{deckSize}</span>
             </button>
             <AnimatePresence mode="popLayout">
-              {cards.map(card => (
-                <motion.div
-                  key={card.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.85 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ flex: 1, display: 'flex', minWidth: 0 }}
-                >
-                  <Card card={card} showLabel={aiMode} />
-                </motion.div>
-              ))}
+              {cards.map(card =>
+                suppressedCardIds.has(card.id) ? (
+                  <motion.div
+                    key={card.id}
+                    className="card-slot card-slot-empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0 } }}
+                    transition={{ duration: 0.25 }}
+                  />
+                ) : (
+                  <motion.div
+                    key={card.id}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0 } }}
+                    transition={{ duration: 0.25 }}
+                    className="card-slot"
+                  >
+                    <Card card={card} showLabel={aiMode} />
+                  </motion.div>
+                )
+              )}
             </AnimatePresence>
           </div>
         );

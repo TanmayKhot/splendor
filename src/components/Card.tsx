@@ -1,7 +1,9 @@
+import { useCallback } from 'react';
 import type { DevelopmentCard } from '../game/types';
 import { COLORED_GEMS } from '../game/constants';
 import { canAfford } from '../game/selectors';
 import { useGameStore } from '../store/gameStore';
+import { useAnimation } from './AnimationProvider';
 
 interface CardProps {
   card: DevelopmentCard;
@@ -11,6 +13,10 @@ interface CardProps {
 
 export default function Card({ card, showActions = true, showLabel = false }: CardProps) {
   const player = useGameStore(s => s.players[s.currentPlayerIndex]);
+  const { registerCardSource } = useAnimation();
+  const cardRef = useCallback((el: HTMLElement | null) => {
+    registerCardSource(card.id, el, card);
+  }, [card, registerCardSource]);
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const purchaseCard = useGameStore(s => s.purchaseCard);
@@ -25,7 +31,7 @@ export default function Card({ card, showActions = true, showLabel = false }: Ca
   const costs = COLORED_GEMS.filter(c => (card.cost[c] ?? 0) > 0);
 
   return (
-    <div className={`card card-color-${card.gemBonus}`}>
+    <div ref={cardRef} className={`card card-color-${card.gemBonus}`}>
       {showLabel && <span className="card-label">{card.id}</span>}
       <div className="card-header">
         <span className="card-points">{card.prestigePoints || ''}</span>

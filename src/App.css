@@ -355,6 +355,20 @@ button:not(:disabled):hover {
   color: #e8dcc8;
 }
 
+.card-slot {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.card-slot-empty {
+  min-width: 120px;
+  min-height: 140px;
+  border: 1.5px dashed #2a3a55;
+  border-radius: 10px;
+  background: rgba(26, 37, 53, 0.3);
+}
+
 .card {
   background: #1a2535;
   border: 1.5px solid #2a3a55;
@@ -1300,10 +1314,41 @@ button:not(:disabled):hover {
 }
 
 .flying-card {
-  width: 40px;
-  height: 52px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 0.7rem;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+/* When flying card has real card content, style like a real card */
+.flying-card.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+}
+
+.flying-card-label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+/* Golden glow highlight phase */
+.flying-highlight {
+  box-shadow:
+    0 0 12px 4px rgba(245, 197, 24, 0.7),
+    0 0 24px 8px rgba(245, 197, 24, 0.4),
+    0 0 40px 16px rgba(245, 197, 24, 0.2);
+  border: 3px solid #f5c518;
+}
+
+.flying-highlight.flying-gem {
+  border-radius: 50%;
+}
+
+.flying-highlight.flying-card {
+  border-radius: 10px;
 }

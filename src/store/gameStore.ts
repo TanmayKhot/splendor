@@ -32,8 +32,8 @@ import { getSocket } from '../online/socketClient';
 export type LastMove =
   | { type: 'takeGems'; colors: ColoredGem[] }
   | { type: 'take2Gems'; color: ColoredGem }
-  | { type: 'reserveCard'; gemBonus: ColoredGem; prestigePoints: number }
-  | { type: 'purchaseCard'; gemBonus: ColoredGem; prestigePoints: number; cost: Partial<Record<ColoredGem, number>> };
+  | { type: 'reserveCard'; cardId?: string; gemBonus: ColoredGem; prestigePoints: number }
+  | { type: 'purchaseCard'; cardId: string; gemBonus: ColoredGem; prestigePoints: number; cost: Partial<Record<ColoredGem, number>> };
 
 const initialAiState: AiState = {
   status: 'idle',
@@ -224,6 +224,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newState = applyReserveCard(state, source);
     const lastMoves = setLastMove(state.lastMoves, state.currentPlayerIndex, {
       type: 'reserveCard',
+      cardId: card?.id,
       gemBonus: card?.gemBonus ?? 'white',
       prestigePoints: card?.prestigePoints ?? 0,
     });
@@ -247,6 +248,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newState = applyPurchaseCard(state, card);
     const lastMoves = setLastMove(state.lastMoves, state.currentPlayerIndex, {
       type: 'purchaseCard',
+      cardId: card.id,
       gemBonus: card.gemBonus,
       prestigePoints: card.prestigePoints,
       cost: card.cost,

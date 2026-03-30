@@ -2,6 +2,7 @@ import type { GemColor, ColoredGem } from '../game/types';
 import { COLORED_GEMS } from '../game/constants';
 import { useGameStore, type LastMove } from '../store/gameStore';
 import { getPlayerBonuses, getPlayerPoints, canAfford } from '../game/selectors';
+import { useAnimation } from './AnimationProvider';
 
 const ALL_GEMS: GemColor[] = [...COLORED_GEMS, 'gold'];
 
@@ -37,12 +38,21 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
   const onlineState = useGameStore(s => s.onlineState);
   const lastMove = useGameStore(s => s.lastMoves[playerIndex]);
 
+  const { inFlightGems } = useAnimation();
+
   const isActive = currentPlayerIndex === playerIndex;
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const points = getPlayerPoints(player);
   const bonuses = getPlayerBonuses(player);
   const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
-  const totalGems = ALL_GEMS.reduce((sum, c) => sum + (player.gems[c] ?? 0), 0);
+
+  // Subtract in-flight gems that haven't visually arrived yet
+  const displayGems = (color: GemColor) => {
+    const actual = player.gems[color] ?? 0;
+    const pending = inFlightGems.get(`${playerIndex}-${color}`) ?? 0;
+    return Math.max(0, actual - pending);
+  };
+  const totalGems = ALL_GEMS.reduce((sum, c) => sum + displayGems(c), 0);
 
   return (
     <div className="player-panel-wrapper" data-player={playerIndex}>
@@ -58,25 +68,28 @@ export default function PlayerPanel({ playerIndex }: { playerIndex: 0 | 1 }) {
         {/* Gems + Bonuses aligned grid */}
         <div className="player-gems-header">Gems: {totalGems}/10</div>
         <div className="player-gem-grid">
-          {COLORED_GEMS.map(color => (
-            <div key={color} className="player-gem-col">
-              <span
-                className={`player-gem gem-${color} ${player.gems[color] > 0 ? '' : 'empty'}`}
-                data-player={playerIndex}
-                data-gem-dest={color}
-              >
-                {player.gems[color] > 0 ? player.gems[color] : ''}
-              </span>
-              <span
-                className={`player-bonus gem-${color} ${bonuses[color] > 0 ? 'has-bonus' : ''}`}
-              >
-                {bonuses[color]}
-              </span>
-            </div>
-          ))}
-          {player.gems.gold > 0 && (
+          {COLORED_GEMS.map(color => {
+            const count = displayGems(color);
+            return (
+              <div key={color} className="player-gem-col">
+                <span
+                  className={`player-gem gem-${color} ${count > 0 ? '' : 'empty'}`}
+                  data-player={playerIndex}
+                  data-gem-dest={color}
+                >
+                  {count > 0 ? count : ''}
+                </span>
+                <span
+                  className={`player-bonus gem-${color} ${bonuses[color] > 0 ? 'has-bonus' : ''}`}
+                >
+                  {bonuses[color]}
+                </span>
+              </div>
+            );
+          })}
+          {displayGems('gold') > 0 && (
             <div className="player-gem-col">
-              <span className="player-gem gem-gold">{player.gems.gold}</span>
+              <span className="player-gem gem-gold">{displayGems('gold')}</span>
               <span className="player-bonus-placeholder" />
             </div>
           )}

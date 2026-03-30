@@ -200,10 +200,12 @@ export function applyReserveCard(
   } else {
     card = source;
     const idx = tierIndex(card.tier);
+    const cardPos = newVisible[idx].findIndex(c => c.id === card.id);
     newVisible[idx] = newVisible[idx].filter(c => c.id !== card.id);
-    // Replace from deck
+    // Replace from deck — insert at same position
     if (newDecks[idx].length > 0) {
-      newVisible[idx].push(newDecks[idx].shift()!);
+      const replacement = newDecks[idx].shift()!;
+      newVisible[idx].splice(cardPos, 0, replacement);
     }
   }
 
@@ -263,10 +265,12 @@ export function applyPurchaseCard(state: GameState, card: DevelopmentCard): Game
     newReserved = newReserved.filter(c => c.id !== card.id);
   } else {
     const idx = tierIndex(card.tier);
+    const cardPos = newVisible[idx].findIndex(c => c.id === card.id);
     newVisible[idx] = newVisible[idx].filter(c => c.id !== card.id);
-    // Replace from deck
+    // Replace from deck — insert at same position
     if (newDecks[idx].length > 0) {
-      newVisible[idx].push(newDecks[idx].shift()!);
+      const replacement = newDecks[idx].shift()!;
+      newVisible[idx].splice(cardPos, 0, replacement);
     }
   }
 

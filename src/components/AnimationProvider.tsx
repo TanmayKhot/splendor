@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, type LastMove } from '../store/gameStore';
-import type { GemColor } from '../game/types';
+import type { GemColor, DevelopmentCard } from '../game/types';
+import { COLORED_GEMS } from '../game/constants';
 
 /** Phases: 'highlight' → golden glow at source, then 'fly' → move to destination */
 type FlyPhase = 'highlight' | 'fly';
@@ -16,47 +17,84 @@ interface FlyingItem {
   type: 'gem' | 'card';
   label?: string;
   phase: FlyPhase;
+  /** Full card dimensions from the source element (cards only) */
+  cardWidth?: number;
+  cardHeight?: number;
+  /** Cached card data for rendering full card content in overlay */
+  cardData?: DevelopmentCard;
 }
 
 interface AnimationContextValue {
   registerGemSource: (color: GemColor, el: HTMLElement | null) => void;
-  registerCardSource: (cardId: string, el: HTMLElement | null) => void;
+  registerCardSource: (cardId: string, el: HTMLElement | null, cardData?: DevelopmentCard) => void;
+  /** Gems currently animating toward a player — key: `${playerIndex}-${color}`, value: count */
+  inFlightGems: Map<string, number>;
+  /** Card IDs that should be hidden in tiers until animation completes */
+  suppressedCardIds: Set<string>;
 }
 
 const AnimationContext = createContext<AnimationContextValue>({
   registerGemSource: () => {},
   registerCardSource: () => {},
+  inFlightGems: new Map(),
+  suppressedCardIds: new Set(),
 });
 
 export const useAnimation = () => useContext(AnimationContext);
 
 let nextId = 0;
 
-const HIGHLIGHT_DURATION = 1500; // ms golden glow before flying
-const FLY_DURATION = 0.7; // seconds for the fly animation
-const GEM_STAGGER = 150; // ms between each gem starting its highlight
+const HIGHLIGHT_DURATION = 2500; // ms golden glow before flying
+const FLY_DURATION = 1.2; // seconds for the fly animation
+const GEM_STAGGER = 300; // ms between each gem starting its highlight
+
+/** Renders card content (points, bonus, cost) inside the flying overlay */
+function FlyingCardContent({ card }: { card: DevelopmentCard }) {
+  const costs = COLORED_GEMS.filter(c => (card.cost[c] ?? 0) > 0);
+  return (
+    <>
+      <div className="card-header">
+        <span className="card-points">{card.prestigePoints || ''}</span>
+        <span className={`card-bonus gem-${card.gemBonus}`}>{card.gemBonus[0].toUpperCase()}</span>
+      </div>
+      <div className="card-cost">
+        {costs.map(color => (
+          <span key={color} className={`cost-gem gem-${color}`}>
+            {card.cost[color]}
+          </span>
+        ))}
+      </div>
+    </>
+  );
+}
 
 export default function AnimationProvider({ children }: { children: React.ReactNode }) {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
+  const [inFlightGems, setInFlightGems] = useState<Map<string, number>>(new Map());
+  const [suppressedCardIds, setSuppressedCardIds] = useState<Set<string>>(new Set());
+
   const gemSourceRefs = useRef<Map<string, HTMLElement>>(new Map());
   const cardSourceRefs = useRef<Map<string, HTMLElement>>(new Map());
-  // Snapshot card positions every frame so we have them after state updates
   const cardPositionCache = useRef<Map<string, DOMRect>>(new Map());
+  const cardDataCache = useRef<Map<string, DevelopmentCard>>(new Map());
   const prevLastMovesRef = useRef<[LastMove | null, LastMove | null]>([null, null]);
+  const prevVisibleCardIdsRef = useRef<Set<string>>(new Set());
+  /** Callbacks invoked when a flying item's fly phase completes */
+  const flyCompleteCallbacks = useRef<Map<number, () => void>>(new Map());
 
   const registerGemSource = useCallback((color: GemColor, el: HTMLElement | null) => {
     if (el) gemSourceRefs.current.set(color, el);
     else gemSourceRefs.current.delete(color);
   }, []);
 
-  const registerCardSource = useCallback((cardId: string, el: HTMLElement | null) => {
+  const registerCardSource = useCallback((cardId: string, el: HTMLElement | null, cardData?: DevelopmentCard) => {
     if (el) {
       cardSourceRefs.current.set(cardId, el);
-      // Cache position immediately
       cardPositionCache.current.set(cardId, el.getBoundingClientRect());
+      if (cardData) cardDataCache.current.set(cardId, cardData);
     } else {
       cardSourceRefs.current.delete(cardId);
-      // Keep cached position — we need it after the element is removed
+      // Keep cached position & data — we need them after the element is removed
     }
   }, []);
 
@@ -72,6 +110,12 @@ export default function AnimationProvider({ children }: { children: React.ReactN
     return () => clearInterval(interval);
   }, []);
 
+  // Initialize previous visible card IDs
+  useEffect(() => {
+    const state = useGameStore.getState();
+    prevVisibleCardIdsRef.current = new Set(state.board.visibleCards.flat().map(c => c.id));
+  }, []);
+
   const addFlyingItems = useCallback((items: Omit<FlyingItem, 'id'>[]) => {
     const newItems = items.map(item => ({ ...item, id: nextId++ }));
     setFlyingItems(prev => [...prev, ...newItems]);
@@ -79,6 +123,9 @@ export default function AnimationProvider({ children }: { children: React.ReactN
   }, []);
 
   const removeFlyingItem = useCallback((id: number) => {
+    // Fire the fly-complete callback (e.g. decrement in-flight gems, unsuppress cards)
+    flyCompleteCallbacks.current.get(id)?.();
+    flyCompleteCallbacks.current.delete(id);
     setFlyingItems(prev => prev.filter(item => item.id !== id));
   }, []);
 
@@ -93,22 +140,26 @@ export default function AnimationProvider({ children }: { children: React.ReactN
     const unsub = useGameStore.subscribe((state) => {
       const [prev0, prev1] = prevLastMovesRef.current;
       const [cur0, cur1] = state.lastMoves;
+      const currentCardIds = new Set(state.board.visibleCards.flat().map(c => c.id));
 
       if (cur0 && cur0 !== prev0) {
-        triggerAnimationsForMove(cur0, 0);
+        triggerAnimationsForMove(cur0, 0, currentCardIds);
       }
       if (cur1 && cur1 !== prev1) {
-        triggerAnimationsForMove(cur1, 1);
+        triggerAnimationsForMove(cur1, 1, currentCardIds);
       }
 
       prevLastMovesRef.current = state.lastMoves;
+      prevVisibleCardIdsRef.current = currentCardIds;
     });
     return unsub;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function triggerAnimationsForMove(move: LastMove, playerIndex: 0 | 1) {
+  function triggerAnimationsForMove(move: LastMove, playerIndex: 0 | 1, currentCardIds: Set<string>) {
     const items: Omit<FlyingItem, 'id'>[] = [];
+    // Track gem keys that will be in-flight (one entry per flying item)
+    const gemKeys: string[] = [];
 
     if (move.type === 'takeGems') {
       for (const color of move.colors) {
@@ -126,6 +177,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
             type: 'gem',
             phase: 'highlight',
           });
+          gemKeys.push(`${playerIndex}-${color}`);
         }
       }
     } else if (move.type === 'take2Gems') {
@@ -144,20 +196,17 @@ export default function AnimationProvider({ children }: { children: React.ReactN
             type: 'gem',
             phase: 'highlight',
           });
+          gemKeys.push(`${playerIndex}-${move.color}`);
         }
       }
     } else if (move.type === 'purchaseCard' || move.type === 'reserveCard') {
-      // Use cached card position (card may already be removed from DOM)
-      const cardId = 'cardId' in move ? (move as any).cardId : undefined;
+      const cardId = move.cardId;
       let from: DOMRect | undefined;
 
-      // Try to find the card element in the cache
       if (cardId) {
         from = cardPositionCache.current.get(cardId);
       }
-      // Fallback: scan all cached positions for any card with matching gemBonus
       if (!from) {
-        // Use the most recent card position from the board area
         const boardMain = document.querySelector('.board-main');
         if (boardMain) {
           const rect = boardMain.getBoundingClientRect();
@@ -179,15 +228,67 @@ export default function AnimationProvider({ children }: { children: React.ReactN
             ? `${move.prestigePoints}pts`
             : 'R',
           phase: 'highlight',
+          cardWidth: from.width,
+          cardHeight: from.height,
+          cardData: cardId ? cardDataCache.current.get(cardId) : undefined,
+        });
+      }
+
+      // Detect new cards that replaced the purchased/reserved one — suppress until animation ends
+      const newCardIds = [...currentCardIds].filter(id => !prevVisibleCardIdsRef.current.has(id));
+      if (newCardIds.length > 0) {
+        setSuppressedCardIds(prev => {
+          const next = new Set(prev);
+          newCardIds.forEach(id => next.add(id));
+          return next;
         });
       }
     }
 
+    // Mark gems as in-flight immediately (before staggered timeouts)
+    if (gemKeys.length > 0) {
+      setInFlightGems(prev => {
+        const next = new Map(prev);
+        for (const key of gemKeys) {
+          next.set(key, (next.get(key) ?? 0) + 1);
+        }
+        return next;
+      });
+    }
+
     if (items.length > 0) {
-      // Stagger items: each starts its highlight phase with a delay
       items.forEach((item, i) => {
         setTimeout(() => {
           const ids = addFlyingItems([item]);
+
+          // Register fly-complete callbacks
+          ids.forEach(id => {
+            if (item.type === 'gem') {
+              const key = gemKeys[i];
+              flyCompleteCallbacks.current.set(id, () => {
+                setInFlightGems(prev => {
+                  const next = new Map(prev);
+                  const count = (next.get(key) ?? 1) - 1;
+                  if (count <= 0) next.delete(key);
+                  else next.set(key, count);
+                  return next;
+                });
+              });
+            } else if (item.type === 'card') {
+              // Capture new card IDs in closure for unsuppression
+              const newCardIds = [...currentCardIds].filter(cid => !prevVisibleCardIdsRef.current.has(cid));
+              flyCompleteCallbacks.current.set(id, () => {
+                if (newCardIds.length > 0) {
+                  setSuppressedCardIds(prev => {
+                    const next = new Set(prev);
+                    newCardIds.forEach(cid => next.delete(cid));
+                    return next;
+                  });
+                }
+              });
+            }
+          });
+
           // After highlight duration, transition to fly phase
           setTimeout(() => {
             ids.forEach(id => transitionToFly(id));
@@ -198,16 +299,26 @@ export default function AnimationProvider({ children }: { children: React.ReactN
   }
 
   return (
-    <AnimationContext.Provider value={{ registerGemSource, registerCardSource }}>
+    <AnimationContext.Provider value={{ registerGemSource, registerCardSource, inFlightGems, suppressedCardIds }}>
       {children}
       {/* Flying items overlay */}
       <div className="fly-overlay">
         <AnimatePresence>
-          {flyingItems.map(item => (
-            item.phase === 'highlight' ? (
+          {flyingItems.map(item => {
+            const isCard = item.type === 'card';
+            const cardStyle = isCard && item.cardWidth
+              ? { width: item.cardWidth, height: item.cardHeight, borderRadius: 10 }
+              : undefined;
+
+            return item.phase === 'highlight' ? (
               <motion.div
                 key={item.id}
-                className={`flying-item flying-${item.type} gem-${item.color} flying-highlight`}
+                className={
+                  isCard && item.cardData
+                    ? `flying-item flying-card card card-color-${item.color} flying-highlight`
+                    : `flying-item flying-${item.type} gem-${item.color} flying-highlight`
+                }
+                style={cardStyle}
                 initial={{
                   left: item.fromX,
                   top: item.fromY,
@@ -217,23 +328,34 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                   y: '-50%',
                 }}
                 animate={{
-                  scale: [1, 1.15, 1, 1.15, 1],
+                  scale: isCard
+                    ? [1, 1.02, 1, 1.02, 1, 1.02, 1]
+                    : [1, 1.2, 1, 1.2, 1, 1.2, 1],
                 }}
                 transition={{
                   duration: HIGHLIGHT_DURATION / 1000,
                   ease: 'easeInOut',
                 }}
               >
-                {item.label && <span>{item.label}</span>}
+                {isCard && item.cardData ? (
+                  <FlyingCardContent card={item.cardData} />
+                ) : (
+                  item.label && <span className="flying-card-label">{item.label}</span>
+                )}
               </motion.div>
             ) : (
               <motion.div
                 key={item.id}
-                className={`flying-item flying-${item.type} gem-${item.color}`}
+                className={
+                  isCard && item.cardData
+                    ? `flying-item flying-card card card-color-${item.color}`
+                    : `flying-item flying-${item.type} gem-${item.color}`
+                }
+                style={cardStyle}
                 initial={{
                   left: item.fromX,
                   top: item.fromY,
-                  scale: 1.15,
+                  scale: isCard ? 1.02 : 1.15,
                   opacity: 1,
                   x: '-50%',
                   y: '-50%',
@@ -241,22 +363,26 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                 animate={{
                   left: item.toX,
                   top: item.toY,
-                  scale: 0.7,
+                  scale: isCard ? 0.3 : 0.7,
                   opacity: 0.8,
                   x: '-50%',
                   y: '-50%',
                 }}
-                exit={{ opacity: 0, scale: 0.3 }}
+                exit={{ opacity: 0, scale: 0.2 }}
                 transition={{
                   duration: FLY_DURATION,
                   ease: [0.25, 0.46, 0.45, 0.94],
                 }}
                 onAnimationComplete={() => removeFlyingItem(item.id)}
               >
-                {item.label && <span>{item.label}</span>}
+                {isCard && item.cardData ? (
+                  <FlyingCardContent card={item.cardData} />
+                ) : (
+                  item.label && <span className="flying-card-label">{item.label}</span>
+                )}
               </motion.div>
-            )
-          ))}
+            );
+          })}
         </AnimatePresence>
       </div>
     </AnimationContext.Provider>
