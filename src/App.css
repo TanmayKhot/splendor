@@ -98,7 +98,7 @@ button:not(:disabled):hover {
   font-family: inherit;
 }
 
-.game-setup > button {
+.game-setup > button:not(.btn-rules) {
   padding: 12px 32px;
   font-size: 1.1rem;
   background: linear-gradient(135deg, #f5c518, #d4a017);
@@ -120,7 +120,7 @@ button:not(:disabled):hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 24px;
+  padding: 10px 8px;
   border: 1px solid #3a4a6a;
   border-radius: 6px;
   cursor: pointer;
@@ -129,6 +129,7 @@ button:not(:disabled):hover {
   background: #1a2535;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   flex: 1;
+  min-width: 0;
 }
 
 .mode-option:hover {
@@ -151,6 +152,7 @@ button:not(:disabled):hover {
   border: 1px solid #3a4a6a;
   border-radius: 6px;
   letter-spacing: 0.5px;
+  width: 260px;
   transition: color 0.15s, border-color 0.15s;
 }
 
@@ -1211,9 +1213,9 @@ button:not(:disabled):hover {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  max-width: 400px;
+  max-width: 260px;
+  width: 260px;
   margin: 0 auto;
-  padding: 20px;
 }
 
 .lobby-section {
