@@ -160,6 +160,8 @@ export default function AnimationProvider({ children }: { children: React.ReactN
     const items: Omit<FlyingItem, 'id'>[] = [];
     // Track gem keys that will be in-flight (one entry per flying item)
     const gemKeys: string[] = [];
+    // Card IDs that are new (replacement cards) — captured once before prevVisibleCardIdsRef updates
+    let newCardIdsToUnsuppress: string[] = [];
 
     if (move.type === 'takeGems') {
       for (const color of move.colors) {
@@ -235,11 +237,11 @@ export default function AnimationProvider({ children }: { children: React.ReactN
       }
 
       // Detect new cards that replaced the purchased/reserved one — suppress until animation ends
-      const newCardIds = [...currentCardIds].filter(id => !prevVisibleCardIdsRef.current.has(id));
-      if (newCardIds.length > 0) {
+      newCardIdsToUnsuppress = [...currentCardIds].filter(id => !prevVisibleCardIdsRef.current.has(id));
+      if (newCardIdsToUnsuppress.length > 0) {
         setSuppressedCardIds(prev => {
           const next = new Set(prev);
-          newCardIds.forEach(id => next.add(id));
+          newCardIdsToUnsuppress.forEach(id => next.add(id));
           return next;
         });
       }
@@ -275,13 +277,12 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                 });
               });
             } else if (item.type === 'card') {
-              // Capture new card IDs in closure for unhighlighting
-              const newCardIds = [...currentCardIds].filter(cid => !prevVisibleCardIdsRef.current.has(cid));
+              // Use pre-captured newCardIdsToUnsuppress — prevVisibleCardIdsRef is already stale by now
               flyCompleteCallbacks.current.set(id, () => {
-                if (newCardIds.length > 0) {
-                  setHighlightedCardIds(prev => {
+                if (newCardIdsToUnsuppress.length > 0) {
+                  setSuppressedCardIds(prev => {
                     const next = new Set(prev);
-                    newCardIds.forEach(cid => next.delete(cid));
+                    newCardIdsToUnsuppress.forEach(cid => next.delete(cid));
                     return next;
                   });
                 }
@@ -299,7 +300,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
   }
 
   return (
-    <AnimationContext.Provider value={{ registerGemSource, registerCardSource, inFlightGems, highlightedCardIds }}>
+    <AnimationContext.Provider value={{ registerGemSource, registerCardSource, inFlightGems, suppressedCardIds }}>
       {children}
       {/* Flying items overlay */}
       <div className="fly-overlay">

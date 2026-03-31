@@ -1,6 +1,5 @@
 import { useGameStore } from '../store/gameStore';
 import type { CardTier } from '../game/types';
-import { AnimatePresence, motion } from 'framer-motion';
 import Card from './Card';
 import { useAnimation } from './AnimationProvider';
 
@@ -17,7 +16,7 @@ export default function CardTiers() {
   const onlineState = useGameStore(s => s.onlineState);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
-  const { highlightedCardIds } = useAnimation();
+  const { suppressedCardIds } = useAnimation();
 
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
@@ -29,11 +28,6 @@ export default function CardTiers() {
         const cards = visibleCards[tierIdx];
         const deckSize = decks[tierIdx].length;
 
-        // Build fixed-position slots: cards at their index, empty slots for gaps
-        const slots = Array.from({ length: MAX_VISIBLE }, (_, i) => {
-          return cards[i] ?? null;
-        });
-
         return (
           <div key={tier} className="card-tier">
             <button
@@ -44,26 +38,18 @@ export default function CardTiers() {
               <span>Tier {tier}</span>
               <span className="deck-count">{deckSize}</span>
             </button>
-            {slots.map((card, i) =>
-              card ? (
-                <div key={`${tier}-${i}`} className={`card-slot${highlightedCardIds.has(card.id) ? ' card-slot-highlighted' : ''}`}>
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={card.id}
-                      initial={{ opacity: 0, scale: 0.85 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.15 } }}
-                      transition={{ duration: 0.25 }}
-                      style={{ display: 'flex', flex: 1 }}
-                    >
-                      <Card card={card} showLabel={aiMode} />
-                    </motion.div>
-                  </AnimatePresence>
+            {Array.from({ length: MAX_VISIBLE }, (_, i) => {
+              const card = cards[i] ?? null;
+              if (!card) {
+                return <div key={`${tier}-${i}`} className="card-slot card-slot-empty" />;
+              }
+              const isSuppressed = suppressedCardIds.has(card.id);
+              return (
+                <div key={`${tier}-${i}`} className="card-slot" style={isSuppressed ? { visibility: 'hidden' } : undefined}>
+                  <Card card={card} showLabel={aiMode} />
                 </div>
-              ) : (
-                <div key={`${tier}-${i}`} className="card-slot card-slot-empty" />
-              )
-            )}
+              );
+            })}
           </div>
         );
       })}

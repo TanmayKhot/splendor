@@ -53,20 +53,21 @@ Online mode:
   - `socketClient.ts` — Socket.io client singleton, token management, reconnection, visibility handler, room storage
 - `src/store/gameStore.ts` — Zustand store; single source of truth; holds `aiMode`, `aiConfig`, `aiState`, `onlineState`; in online mode emits socket actions instead of applying locally
 - `src/components/` — React components; read from store, dispatch actions, never compute game logic
+  - `AnimationProvider.tsx` — Context provider wrapping the app; two-phase flying animation system for cards/gems (highlight → fly) triggered by `lastMoves` changes; tracks in-flight gems, suppresses replacement cards during animation
   - `GameSetup.tsx` — Mode toggle (local / vs AI / online), player name inputs, AI provider/model/API key config
   - `OnlineLobby.tsx` — Room creation/joining, player list, start game button; manages socket event handlers
   - `PasswordGate.tsx` — Password authentication gate; checks `/api/health` for `passwordRequired` flag
   - `ConnectionBanner.tsx` — Shows connection status and opponent connectivity in online mode
   - `AiPlayerController.tsx` — Invisible component that drives AI turns
   - `AiReasoningPanel.tsx` — Shows AI thinking status, reasoning, action summary
-  - `Card.tsx` — Single development card with Buy/Reserve buttons
-  - `CardTiers.tsx` — 3 tiers of 4 visible cards + deck buttons
-  - `GemPool.tsx` — Central gem supply with selection UI
+  - `Card.tsx` — Single development card with Buy/Reserve buttons; registers with AnimationProvider for position caching
+  - `CardTiers.tsx` — 3 tiers of 4 visible cards + deck buttons; renders empty placeholder slots for suppressed/missing cards
+  - `GemPool.tsx` — Central gem supply with selection UI; registers gem sources with AnimationProvider
   - `NobleRow.tsx` — Noble tiles display
-  - `PlayerPanel.tsx` — Player gems, bonuses, nobles, reserved cards
+  - `PlayerPanel.tsx` — Player gems, bonuses, nobles, reserved cards; column-grid layout aligning gems with bonuses
   - `TurnIndicator.tsx` — Current player indicator
   - `DiscardModal.tsx` — Gem discard when over 10
-  - `NobleModal.tsx` — Noble selection when eligible
+  - `NobleModal.tsx` — Noble selection when eligible; shows waiting message for opponent in online mode
   - `GameOver.tsx` — Winner display with play-again option
 - `server/` — Express + Socket.io server
   - `index.ts` — Server entry point; health endpoint, auth endpoint, AI proxy, static file serving, Socket.io setup, graceful shutdown
@@ -125,6 +126,10 @@ Accepts 1–3 distinct non-gold colors. Fewer than 3 is legal when the supply ha
 
 `reserveCard(source: DevelopmentCard | { fromDeck: CardTier })` — passing a `DevelopmentCard` reserves a visible card; passing `{ fromDeck }` reserves the top of a deck (player sees it, opponent does not).
 
+### Card replacement positional stability
+
+When a visible card is purchased or reserved, the engine replaces it from the deck **at the same array index** using `splice(cardPos, 0, replacement)` — not `push()`. This ensures the remaining cards don't shift position in the UI. The `CardTiers` component renders cards by array index, so stable indices = stable visual positions.
+
 ## Server
 
 The Express/Socket.io server (`server/index.ts`) handles AI proxy, online multiplayer, and password authentication. `npm run dev` starts both Vite and the server together. Vite proxies `/api` and `/socket.io` to `:3001`.
@@ -151,6 +156,7 @@ The Express/Socket.io server (`server/index.ts`) handles AI proxy, online multip
 - Server is bundled with **esbuild** (not tsc) to produce a single `dist-server/index.js` — this avoids Node.js ESM import resolution issues with extensionless paths
 - Express 5 requires `'/{*splat}'` syntax for wildcard routes (not bare `'*'`)
 - The `PasswordGate` checks `passwordRequired` from `/api/health` response (not HTTP 401)
+- **Stale `.js` artifacts**: `tsc` may emit `.js`/`.js.map` into `src/game/` which shadow the `.ts` sources when the server resolves imports. `.gitignore` excludes them, but if they appear locally, delete them and run `npm run build:server` to rebuild. Symptoms: engine logic regressions (e.g. card replacement using `push` instead of `splice`)
 
 ## AI player
 
@@ -158,9 +164,23 @@ Supported providers: `anthropic`, `openai`, `gemini`, `openrouter`, `custom`. De
 
 `AiPlayerController` watches the store; when it's the AI's turn and no modal is pending, it invokes `aiService.getAiMove(gameState, aiConfig)` and dispatches the returned `AiAction`. After 3 consecutive failures it surfaces a manual-override option.
 
+## Animations
+
+Card/gem actions trigger two-phase flying animations via `AnimationProvider` (wraps the app in `App.tsx`):
+
+1. **Highlight phase** (2.5s): Golden glow pulsing at the source position (gem pool or card slot)
+2. **Fly phase** (1.2s): Element animates from source to destination player panel; gem stagger is 300ms
+
+Key mechanics:
+- `lastMoves` changes in the store trigger animation detection via a Zustand subscription
+- Gems in flight are tracked in `inFlightGems` map — `PlayerPanel` delays count updates until the animation lands
+- Replacement cards (drawn from deck after purchase/reserve) are suppressed (`visibility: hidden`) until the fly animation completes, then revealed
+- Card source positions are cached via `registerCardSource` (called from `Card.tsx`) and refreshed every 500ms
+- Uses **framer-motion** for declarative animation orchestration
+
 ## Styling
 
-Dark luxury theme with CSS in `src/App.css`. Gem colors: white, blue, green, red, black, gold. Cards show gem-colored bonus indicators and cost circles.
+Dark luxury theme with CSS in `src/App.css`. Gem colors: white, blue, green, red, black, gold. Cards show gem-colored bonus indicators and cost circles. Animation overlay (`.fly-overlay`) renders flying items above all content.
 
 ## Game data reference
 
