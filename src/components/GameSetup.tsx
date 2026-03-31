@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { AiProvider } from '../ai/aiTypes';
 import OnlineLobby from './OnlineLobby';
+import RulesModal from './RulesModal';
 
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-sonnet-4-20250514',
@@ -21,6 +22,7 @@ export default function GameSetup() {
   const [baseUrl, setBaseUrl] = useState('');
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testError, setTestError] = useState('');
+  const [showRules, setShowRules] = useState(false);
   const initGame = useGameStore(s => s.initGame);
 
   const isAi = mode === 'ai';
@@ -81,7 +83,11 @@ export default function GameSetup() {
 
   return (
     <div className="game-setup">
+      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       <h2>New Game</h2>
+      <button type="button" className="btn-rules" onClick={() => setShowRules(true)}>
+        How to Play
+      </button>
 
       <div className="mode-toggle">
         <button
