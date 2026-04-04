@@ -46,6 +46,7 @@ let nextId = 0;
 
 const HIGHLIGHT_DURATION = 2500; // ms golden glow before flying
 const FLY_DURATION = 1.2; // seconds for the fly animation
+const FLY_DURATION_MS = FLY_DURATION * 1000 + 200; // ms with buffer for cleanup
 const GEM_STAGGER = 300; // ms between each gem starting its highlight
 
 /** Renders card content (points, bonus, cost) inside the flying overlay */
@@ -81,6 +82,8 @@ export default function AnimationProvider({ children }: { children: React.ReactN
   const prevVisibleCardIdsRef = useRef<Set<string>>(new Set());
   /** Callbacks invoked when a flying item's fly phase completes */
   const flyCompleteCallbacks = useRef<Map<number, () => void>>(new Map());
+  /** Track which items have already been removed (prevent double-cleanup) */
+  const removedIds = useRef<Set<number>>(new Set());
 
   const registerGemSource = useCallback((color: GemColor, el: HTMLElement | null) => {
     if (el) gemSourceRefs.current.set(color, el);
@@ -123,6 +126,12 @@ export default function AnimationProvider({ children }: { children: React.ReactN
   }, []);
 
   const removeFlyingItem = useCallback((id: number) => {
+    // Prevent double-removal (onAnimationComplete + timeout fallback can race)
+    if (removedIds.current.has(id)) return;
+    removedIds.current.add(id);
+    // Clean up after a delay to prevent unbounded growth
+    setTimeout(() => removedIds.current.delete(id), 5000);
+
     // Fire the fly-complete callback (e.g. decrement in-flight gems, unsuppress cards)
     flyCompleteCallbacks.current.get(id)?.();
     flyCompleteCallbacks.current.delete(id);
@@ -153,9 +162,14 @@ export default function AnimationProvider({ children }: { children: React.ReactN
         triggerAnimationsForMove(cur0, 0, currentCardIds);
       } else if (moved1 && !moved0) {
         triggerAnimationsForMove(cur1, 1, currentCardIds);
+      } else if (moved0 && moved1) {
+        // Both changed at once (e.g. online mode initial sync) — animate whichever is the current player
+        const cp = state.currentPlayerIndex === 0 ? 1 : 0; // just moved = previous player
+        if (cp === 0) triggerAnimationsForMove(cur0, 0, currentCardIds);
+        else triggerAnimationsForMove(cur1, 1, currentCardIds);
       }
 
-      prevLastMovesRef.current = [...state.lastMoves];
+      prevLastMovesRef.current = [cur0, cur1];
       prevVisibleCardIdsRef.current = currentCardIds;
     });
     return unsub;
@@ -296,9 +310,13 @@ export default function AnimationProvider({ children }: { children: React.ReactN
             }
           });
 
-          // After highlight duration, transition to fly phase
+          // After highlight duration, transition to fly phase and schedule cleanup
           setTimeout(() => {
-            ids.forEach(id => transitionToFly(id));
+            ids.forEach(id => {
+              transitionToFly(id);
+              // Timeout fallback: remove item after fly duration even if onAnimationComplete doesn't fire
+              setTimeout(() => removeFlyingItem(id), FLY_DURATION_MS);
+            });
           }, HIGHLIGHT_DURATION);
         }, i * GEM_STAGGER);
       });
@@ -319,7 +337,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
 
             return item.phase === 'highlight' ? (
               <motion.div
-                key={item.id}
+                key={`h-${item.id}`}
                 className={
                   isCard && item.cardData
                     ? `flying-item flying-card card card-color-${item.color} flying-highlight`
@@ -339,6 +357,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                     ? [1, 1.02, 1, 1.02, 1, 1.02, 1]
                     : [1, 1.2, 1, 1.2, 1, 1.2, 1],
                 }}
+                exit={{ opacity: 0 }}
                 transition={{
                   duration: HIGHLIGHT_DURATION / 1000,
                   ease: 'easeInOut',
@@ -352,7 +371,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
               </motion.div>
             ) : (
               <motion.div
-                key={item.id}
+                key={`f-${item.id}`}
                 className={
                   isCard && item.cardData
                     ? `flying-item flying-card card card-color-${item.color}`
