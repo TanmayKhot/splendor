@@ -198,7 +198,7 @@ export function applyAction(code: string, socketId: string, action: WireAction):
     if (player.playerIndex !== state.currentPlayerIndex) return { error: 'NOT_YOUR_TURN' };
     const result = applyDiscardAction(room, action.gems);
     if ('error' in result && result.error) return result;
-    return { gameState: result.gameState, pendingDiscard: result.pendingDiscard, pendingNobles: result.pendingNobles, lastMoves: room.lastMoves };
+    return { gameState: result.gameState, pendingDiscard: result.pendingDiscard, pendingNobles: result.pendingNobles, lastMoves: [...room.lastMoves] };
   }
 
   // Handle pending nobles
@@ -209,7 +209,7 @@ export function applyAction(code: string, socketId: string, action: WireAction):
     if (!noble) return { error: 'INVALID_ACTION' };
     const result = applyNobleAction(room, noble);
     if ('error' in result && result.error) return result;
-    return { gameState: result.gameState, pendingDiscard: result.pendingDiscard, pendingNobles: result.pendingNobles, lastMoves: room.lastMoves };
+    return { gameState: result.gameState, pendingDiscard: result.pendingDiscard, pendingNobles: result.pendingNobles, lastMoves: [...room.lastMoves] };
   }
 
   // Normal action — check turn
@@ -244,7 +244,7 @@ export function applyAction(code: string, socketId: string, action: WireAction):
       if (!canReserveCard(state, source)) return { error: 'INVALID_ACTION' };
       const card = 'fromDeck' in source ? undefined : source;
       newState = applyReserveCard(state, source);
-      lastMove = { type: 'reserveCard', gemBonus: card?.gemBonus ?? 'white', prestigePoints: card?.prestigePoints ?? 0 };
+      lastMove = { type: 'reserveCard', cardId: card?.id, gemBonus: card?.gemBonus ?? 'white', prestigePoints: card?.prestigePoints ?? 0 };
       break;
     }
     case 'purchaseCard': {
@@ -252,7 +252,7 @@ export function applyAction(code: string, socketId: string, action: WireAction):
       if (!card) return { error: 'INVALID_ACTION' };
       if (!canPurchaseCard(state, card)) return { error: 'INVALID_ACTION' };
       newState = applyPurchaseCard(state, card);
-      lastMove = { type: 'purchaseCard', gemBonus: card.gemBonus, prestigePoints: card.prestigePoints, cost: card.cost };
+      lastMove = { type: 'purchaseCard', cardId: card.id, gemBonus: card.gemBonus, prestigePoints: card.prestigePoints, cost: card.cost };
       break;
     }
     default:
@@ -262,7 +262,7 @@ export function applyAction(code: string, socketId: string, action: WireAction):
   room.lastMoves[pi] = lastMove;
   const result = runPostActionChecks(room, newState);
   if ('error' in result && result.error) return result;
-  return { gameState: result.gameState, pendingDiscard: result.pendingDiscard, pendingNobles: result.pendingNobles, lastMoves: room.lastMoves };
+  return { gameState: result.gameState, pendingDiscard: result.pendingDiscard, pendingNobles: result.pendingNobles, lastMoves: [...room.lastMoves] };
 }
 
 function applyDiscardAction(room: Room, gems: GemCost): RoomResult<{ gameState: GameState; pendingDiscard: boolean; pendingNobles: NobleTile[] }> {

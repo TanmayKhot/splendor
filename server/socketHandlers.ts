@@ -103,6 +103,7 @@ export function registerSocketHandlers(io: Server): void {
         gameState: result.gameState,
         pendingDiscard: false,
         pendingNobles: [],
+        lastMoves: [null, null],
       });
     });
 
