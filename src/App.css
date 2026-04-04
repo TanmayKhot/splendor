@@ -1235,24 +1235,24 @@ button:not(:disabled):hover {
 .password-toggle-btn {
   position: absolute;
   right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.3);
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 400;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0;
+  padding: 0 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: auto;
   transition: color 0.15s;
   font-family: inherit;
   white-space: nowrap;
-  top: 50%;
-  transform: translateY(-50%);
   pointer-events: auto;
 }
 
