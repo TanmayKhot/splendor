@@ -15,7 +15,10 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 export default function GameSetup() {
   const [p1Name, setP1Name] = useState('');
   const [p2Name, setP2Name] = useState('');
-  const [mode, setMode] = useState<'local' | 'ai' | 'online'>('local');
+  const [mode, setMode] = useState<'local' | 'ai' | 'online'>(() => {
+    // Auto-switch to online mode when opened via a room invite link
+    return /^\/room\/[A-Z0-9]{6}$/i.test(window.location.pathname) ? 'online' : 'local';
+  });
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [model, setModel] = useState(DEFAULT_MODELS.anthropic);
   const [apiKey, setApiKey] = useState('');
