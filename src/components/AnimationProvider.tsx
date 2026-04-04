@@ -142,10 +142,16 @@ export default function AnimationProvider({ children }: { children: React.ReactN
       const [cur0, cur1] = state.lastMoves;
       const currentCardIds = new Set(state.board.visibleCards.flat().map(c => c.id));
 
-      if (cur0 && cur0 !== prev0) {
+      const moved0 = cur0 && cur0 !== prev0;
+      const moved1 = cur1 && cur1 !== prev1;
+
+      // Only animate if exactly one player moved (prevents old moves from replaying).
+      // In online mode, the server broadcasts the full lastMoves array which can contain
+      // both players' moves, but only one is new per turn. This ensures we don't replay
+      // the opponent's previous move when receiving our own move confirmation.
+      if (moved0 && !moved1) {
         triggerAnimationsForMove(cur0, 0, currentCardIds);
-      }
-      if (cur1 && cur1 !== prev1) {
+      } else if (moved1 && !moved0) {
         triggerAnimationsForMove(cur1, 1, currentCardIds);
       }
 
