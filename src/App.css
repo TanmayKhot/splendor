@@ -1213,17 +1213,21 @@ button:not(:disabled):hover {
 
 .password-toggle-btn {
   position: absolute;
-  right: 8px;
+  right: 10px;
   background: transparent;
   border: none;
   color: #8a9ab5;
-  font-size: 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 0 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: color 0.15s;
+  font-family: inherit;
 }
 
 .password-toggle-btn:not(:disabled):hover {
@@ -1233,7 +1237,7 @@ button:not(:disabled):hover {
 }
 
 .password-toggle-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 

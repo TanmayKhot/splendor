@@ -123,7 +123,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
               disabled={submitting || !password}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? '👁️' : '👁️‍🗨️'}
+              {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
           <button type="submit" disabled={submitting || !password}>
