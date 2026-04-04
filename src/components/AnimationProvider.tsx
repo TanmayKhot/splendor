@@ -155,7 +155,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
         triggerAnimationsForMove(cur1, 1, currentCardIds);
       }
 
-      prevLastMovesRef.current = state.lastMoves;
+      prevLastMovesRef.current = [...state.lastMoves];
       prevVisibleCardIdsRef.current = currentCardIds;
     });
     return unsub;
