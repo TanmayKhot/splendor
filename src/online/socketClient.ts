@@ -96,8 +96,8 @@ export function setupSocketListeners(s: Socket): void {
 
   const set = useGameStore.setState;
 
-  s.on('game:state', ({ gameState, pendingDiscard, pendingNobles }) => {
-    useGameStore.getState().applyServerState(gameState, pendingDiscard, pendingNobles);
+  s.on('game:state', ({ gameState, pendingDiscard, pendingNobles, lastMoves }) => {
+    useGameStore.getState().applyServerState(gameState, pendingDiscard, pendingNobles, lastMoves);
   });
 
   s.on('room:playerDisconnected', () => {
