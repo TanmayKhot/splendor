@@ -1232,23 +1232,21 @@ button:not(:disabled):hover {
   color: #6a7a9a;
 }
 
-.password-toggle-btn {
+.password-input-wrapper .password-toggle-btn {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.75rem;
+  background: transparent !important;
+  border: none !important;
+  color: #8a9ab5;
+  font-size: 0.95rem;
   font-weight: 400;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   cursor: pointer;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  display: inline;
   height: auto;
   transition: color 0.15s;
   font-family: inherit;
@@ -1256,10 +1254,8 @@ button:not(:disabled):hover {
   pointer-events: auto;
 }
 
-.password-toggle-btn:not(:disabled):hover {
-  color: rgba(255, 255, 255, 0.6);
-  transform: translateY(-50%);
-  box-shadow: none;
+.password-input-wrapper .password-toggle-btn:not(:disabled):hover {
+  color: #a8b8c8;
 }
 
 .password-toggle-btn:disabled {
