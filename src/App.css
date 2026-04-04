@@ -1200,6 +1200,43 @@ button:not(:disabled):hover {
   border-radius: 8px;
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #8a9ab5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+
+.password-toggle-btn:not(:disabled):hover {
+  color: #f5c518;
+  transform: none;
+  box-shadow: none;
+}
+
+.password-toggle-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .password-gate-error {
   color: #ff6b6b;
   margin-top: 12px;

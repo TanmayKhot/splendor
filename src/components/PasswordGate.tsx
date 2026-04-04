@@ -25,6 +25,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // Check if site requires password
@@ -106,14 +107,25 @@ export default function PasswordGate({ children }: PasswordGateProps) {
         <h1>Splendor</h1>
         <p className="password-gate-subtitle">Enter password to continue</p>
         <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Password"
-            autoFocus
-            disabled={submitting}
-          />
+          <div className="password-input-wrapper">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              autoFocus
+              disabled={submitting}
+            />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={submitting || !password}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
+          </div>
           <button type="submit" disabled={submitting || !password}>
             {submitting ? 'Verifying...' : 'Enter'}
           </button>
