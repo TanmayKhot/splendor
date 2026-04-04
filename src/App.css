@@ -1205,29 +1205,27 @@ button:not(:disabled):hover {
 }
 
 .password-input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  border: 2px solid #3a4a6a;
-  border-radius: 8px;
-  background: #1a2535;
-  padding: 0;
-  transition: border-color 0.15s;
   width: 100%;
 }
 
-.password-input-wrapper:focus-within {
-  border-color: #f5c518;
-}
-
 .password-input-wrapper input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  color: #e8dcc8;
-  padding: 12px 14px;
+  width: 100%;
+  padding: 10px 14px;
+  padding-right: 50px;
   font-size: 1rem;
+  border: 1px solid #3a4a6a;
+  border-radius: 6px;
+  background: #1a2535;
+  color: #e8dcc8;
   outline: none;
   font-family: inherit;
+}
+
+.password-input-wrapper input:focus {
+  border-color: #f5c518;
 }
 
 .password-input-wrapper input::placeholder {
@@ -1235,15 +1233,17 @@ button:not(:disabled):hover {
 }
 
 .password-toggle-btn {
+  position: absolute;
+  right: 12px;
   background: transparent;
   border: none;
-  color: #8a9ab5;
-  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0 14px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1251,16 +1251,19 @@ button:not(:disabled):hover {
   transition: color 0.15s;
   font-family: inherit;
   white-space: nowrap;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
 }
 
 .password-toggle-btn:not(:disabled):hover {
-  color: #f5c518;
-  transform: none;
+  color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-50%);
   box-shadow: none;
 }
 
 .password-toggle-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
