@@ -5,7 +5,7 @@ import OnlineLobby from './OnlineLobby';
 import RulesModal from './RulesModal';
 
 const DEFAULT_MODELS: Record<AiProvider, string> = {
-  anthropic: 'claude-sonnet-4-20250514',
+  anthropic: 'claude-sonnet-4-6',
   openai: 'gpt-4o',
   gemini: 'gemini-2.5-flash',
   openrouter: 'anthropic/claude-sonnet-4',
@@ -33,7 +33,7 @@ export default function GameSetup() {
   const isOnline = mode === 'online';
   const canStart = p1Name.trim() !== '' && (
     isAi
-      ? (provider === 'anthropic' || apiKey.trim() !== '')
+      ? apiKey.trim() !== ''
       : !isOnline && p2Name.trim() !== ''
   );
 
@@ -164,16 +164,13 @@ export default function GameSetup() {
                 </label>
 
                 <label className="ai-field">
-                  <span>API Key{provider === 'anthropic' ? ' (optional)' : ''}</span>
+                  <span>API Key (Required)</span>
                   <input
                     type="password"
                     value={apiKey}
                     onChange={e => { setApiKey(e.target.value); setTestStatus('idle'); }}
-                    placeholder={provider === 'anthropic' ? 'Leave blank to use hosted key' : 'Enter API key'}
+                    placeholder="Enter API key"
                   />
-                  {provider === 'anthropic' && (
-                    <span className="ai-field-hint">Leave blank to use the hosted key (rate-limited).</span>
-                  )}
                 </label>
 
                 {provider === 'custom' && (
