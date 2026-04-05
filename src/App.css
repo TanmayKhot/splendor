@@ -64,6 +64,16 @@ button:not(:disabled):hover {
   filter: drop-shadow(0 0 8px rgba(245,197,24,0.3));
 }
 
+.app h1 a {
+  color: inherit;
+  text-decoration: none;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background: inherit;
+  cursor: pointer;
+}
+
 /* ── Game Setup ────────────────────────────────────── */
 .game-setup {
   display: flex;

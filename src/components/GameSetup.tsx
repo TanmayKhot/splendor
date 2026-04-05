@@ -15,10 +15,11 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 export default function GameSetup() {
   const [p1Name, setP1Name] = useState('');
   const [p2Name, setP2Name] = useState('');
-  const [mode, setMode] = useState<'local' | 'ai' | 'online'>(() => {
-    // Auto-switch to online mode when opened via a room invite link
-    return /^\/room\/[A-Z0-9]{6}$/i.test(window.location.pathname) ? 'online' : 'local';
+  const [inviteCode] = useState(() => {
+    const match = window.location.pathname.match(/^\/room\/([A-Z0-9]{6})$/i);
+    return match ? match[1].toUpperCase() : '';
   });
+  const [mode, setMode] = useState<'local' | 'ai' | 'online'>(inviteCode ? 'online' : 'local');
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [model, setModel] = useState(DEFAULT_MODELS.anthropic);
   const [apiKey, setApiKey] = useState('');
@@ -87,37 +88,42 @@ export default function GameSetup() {
   return (
     <div className="game-setup">
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
-      <h2>New Game</h2>
-      <button type="button" className="btn-rules" onClick={() => setShowRules(true)}>
-        How to Play
-      </button>
 
-      <div className="mode-toggle">
-        <button
-          type="button"
-          className={`mode-option ${mode === 'local' ? 'active' : ''}`}
-          onClick={() => setMode('local')}
-        >
-          2 Players (Local)
-        </button>
-        <button
-          type="button"
-          className={`mode-option ${mode === 'ai' ? 'active' : ''}`}
-          onClick={() => setMode('ai')}
-        >
-          1 Player vs AI
-        </button>
-        <button
-          type="button"
-          className={`mode-option ${mode === 'online' ? 'active' : ''}`}
-          onClick={() => setMode('online')}
-        >
-          Play Online
-        </button>
-      </div>
+      {!inviteCode && (
+        <>
+          <h2>New Game</h2>
+          <button type="button" className="btn-rules" onClick={() => setShowRules(true)}>
+            How to Play
+          </button>
+
+          <div className="mode-toggle">
+            <button
+              type="button"
+              className={`mode-option ${mode === 'local' ? 'active' : ''}`}
+              onClick={() => setMode('local')}
+            >
+              2 Players (Local)
+            </button>
+            <button
+              type="button"
+              className={`mode-option ${mode === 'ai' ? 'active' : ''}`}
+              onClick={() => setMode('ai')}
+            >
+              1 Player vs AI
+            </button>
+            <button
+              type="button"
+              className={`mode-option ${mode === 'online' ? 'active' : ''}`}
+              onClick={() => setMode('online')}
+            >
+              Play Online
+            </button>
+          </div>
+        </>
+      )}
 
       {isOnline ? (
-        <OnlineLobby />
+        <OnlineLobby inviteCode={inviteCode} />
       ) : (
         <>
           <input

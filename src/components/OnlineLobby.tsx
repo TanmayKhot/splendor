@@ -20,7 +20,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   SERVER_AT_CAPACITY: 'Too many rooms created. Please wait a moment.',
 };
 
-export default function OnlineLobby() {
+export default function OnlineLobby({ inviteCode = '' }: { inviteCode?: string }) {
   const [lobbyState, setLobbyState] = useState<LobbyState>('idle');
   const [nickname, setNickname] = useState('');
   const [roomCode, setRoomCode] = useState('');
@@ -35,13 +35,12 @@ export default function OnlineLobby() {
   const setOnlineState = useGameStore(s => s.setOnlineState);
   const applyServerState = useGameStore(s => s.applyServerState);
 
-  // Deep-link: auto-fill room code from URL
+  // Deep-link: auto-fill room code from invite prop
   useEffect(() => {
-    const match = window.location.pathname.match(/^\/room\/([A-Z0-9]{6})$/i);
-    if (match) {
-      setJoinCode(match[1].toUpperCase());
+    if (inviteCode) {
+      setJoinCode(inviteCode);
     }
-  }, []);
+  }, [inviteCode]);
 
   // Listen for room:destroyed events from setupSocketListeners
   useEffect(() => {
@@ -224,6 +223,43 @@ export default function OnlineLobby() {
 
   // --- Idle state ---
   if (lobbyState === 'idle') {
+    // Invite link: show only name input + join button
+    if (inviteCode) {
+      return (
+        <div className="online-lobby">
+          <h2>Join Game</h2>
+          <div className="lobby-room-header">
+            <span className="lobby-room-label">Room:</span>
+            <span className="lobby-room-code">{inviteCode}</span>
+          </div>
+
+          <div className="lobby-section">
+            <label className="lobby-label">Enter your nickname:</label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={e => setNickname(e.target.value)}
+              placeholder="Nickname"
+              maxLength={20}
+              onKeyDown={e => { if (e.key === 'Enter' && nickname.trim()) handleJoin(); }}
+              autoFocus
+            />
+          </div>
+
+          <button
+            className="lobby-btn-primary"
+            onClick={handleJoin}
+            disabled={!nickname.trim()}
+          >
+            Join Room
+          </button>
+
+          {error && <p className="lobby-error">{error}</p>}
+        </div>
+      );
+    }
+
+    // Normal lobby: create or join
     return (
       <div className="online-lobby">
         <div className="lobby-section">

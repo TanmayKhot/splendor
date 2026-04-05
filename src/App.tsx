@@ -26,7 +26,7 @@ function AppContent() {
   if (phase === 'setup') {
     return (
       <div className="app">
-        <h1>Splendor</h1>
+        <h1><a href="/" onClick={e => { e.preventDefault(); window.history.pushState({}, '', '/'); window.location.reload(); }}>Splendor</a></h1>
         <GameSetup />
       </div>
     );
