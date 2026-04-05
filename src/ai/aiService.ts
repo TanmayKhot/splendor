@@ -38,7 +38,8 @@ STRATEGY PRIORITIES (in order):
 2. Prefer cards that give prestige points AND bonuses you need for nobles or expensive cards.
 3. Engine-building: cheap tier-1 cards with useful bonuses are very valuable early.
 4. PLAN AHEAD: Check the PLANNING section — it shows cards you can't yet afford and exactly which gems you still need. Take gems that move you toward buying a specific high-value card in 1-2 turns.
-5. Reserve cards only to block opponents or secure high-value cards you'll buy soon.
+5. WATCH YOUR OPPONENT: Check the OPPONENT THREATS section — it shows cards your opponent can afford or is close to buying. If they're about to buy a card you also want, consider reserving it to block them. If they're close to reaching 15 points, prioritize points over engine-building.
+6. Reserve cards to block opponents who are close to buying high-value cards, or to secure cards you'll buy soon.
 
 RESPONSE FORMAT:
 Respond with ONLY a raw JSON object. No markdown code blocks, no backticks, no explanation text.
@@ -76,7 +77,10 @@ export function buildGameStatePrompt(state: GameState): string {
       bonus: c.gemBonus,
       cost: compactGems(c.cost),
     })),
-    purchasedCount: p.purchased.length,
+    purchased: p.purchased.map(c => ({
+      pts: c.prestigePoints,
+      bonus: c.gemBonus,
+    })),
   });
 
   const serializeCard = (c: DevelopmentCard) => ({
@@ -109,8 +113,9 @@ export function buildGameStatePrompt(state: GameState): string {
 
   // Build planning section: cards not yet affordable with remaining cost
   const planning = buildPlanningSection(state, p2);
+  const threats = buildOpponentThreatsSection(state, p1);
 
-  return `Current game state:\n${JSON.stringify(gameState)}${planning}`;
+  return `Current game state:\n${JSON.stringify(gameState)}${planning}${threats}`;
 }
 
 function buildPlanningSection(state: GameState, player: typeof state.players[0]): string {
@@ -156,6 +161,103 @@ function buildPlanningSection(state: GameState, player: typeof state.players[0])
 
   if (count === 0) return '';
   lines.push('TIP: Take gems matching these "still need" costs to buy these cards in upcoming turns.');
+  return lines.join('\n');
+}
+
+function buildOpponentThreatsSection(state: GameState, opponent: typeof state.players[0]): string {
+  const canBuy: string[] = [];
+  const closeLines: string[] = [];
+
+  const allVisible = [
+    ...state.board.visibleCards[0],
+    ...state.board.visibleCards[1],
+    ...state.board.visibleCards[2],
+  ];
+
+  for (const card of allVisible) {
+    if (canAfford(card, opponent)) {
+      canBuy.push(`  ${card.id} (${card.prestigePoints}pts, bonus=${card.gemBonus})`);
+    } else {
+      const eff = getEffectiveCost(card, opponent);
+      const stillNeed: Record<string, number> = {};
+      let totalNeeded = 0;
+      for (const color of COLORED_GEMS) {
+        const need = eff[color] ?? 0;
+        const have = opponent.gems[color];
+        if (need > have) {
+          stillNeed[color] = need - have;
+          totalNeeded += need - have;
+        }
+      }
+      // "Close" = needs 1-2 more gems total
+      if (totalNeeded > 0 && totalNeeded <= 2) {
+        const needStr = Object.entries(stillNeed).map(([k, v]) => `${k}:${v}`).join(', ');
+        closeLines.push(`  ${card.id} (${card.prestigePoints}pts, bonus=${card.gemBonus}, needs: {${needStr}})`);
+      }
+    }
+  }
+
+  // Also check opponent's reserved cards
+  for (const card of opponent.reserved) {
+    if (canAfford(card, opponent)) {
+      canBuy.push(`  ${card.id} [RESERVED] (${card.prestigePoints}pts, bonus=${card.gemBonus})`);
+    } else {
+      const eff = getEffectiveCost(card, opponent);
+      const stillNeed: Record<string, number> = {};
+      let totalNeeded = 0;
+      for (const color of COLORED_GEMS) {
+        const need = eff[color] ?? 0;
+        const have = opponent.gems[color];
+        if (need > have) {
+          stillNeed[color] = need - have;
+          totalNeeded += need - have;
+        }
+      }
+      if (totalNeeded > 0 && totalNeeded <= 2) {
+        const needStr = Object.entries(stillNeed).map(([k, v]) => `${k}:${v}`).join(', ');
+        closeLines.push(`  ${card.id} [RESERVED] (${card.prestigePoints}pts, bonus=${card.gemBonus}, needs: {${needStr}})`);
+      }
+    }
+  }
+
+  // Check which nobles the opponent is close to
+  const nobleThreats: string[] = [];
+  for (const noble of state.board.nobles) {
+    const oppBonuses = getPlayerBonuses(opponent);
+    let totalMissing = 0;
+    const missing: Record<string, number> = {};
+    for (const [color, required] of Object.entries(noble.requirement)) {
+      const have = oppBonuses[color as keyof typeof oppBonuses] ?? 0;
+      if (required && have < required) {
+        missing[color] = required - have;
+        totalMissing += required - have;
+      }
+    }
+    if (totalMissing <= 2) {
+      const label = totalMissing === 0 ? 'QUALIFIES NOW' : `needs: {${Object.entries(missing).map(([k, v]) => `${k}:${v}`).join(', ')}}`;
+      nobleThreats.push(`  ${noble.id} (${noble.prestigePoints}pts, ${label})`);
+    }
+  }
+
+  if (canBuy.length === 0 && closeLines.length === 0 && nobleThreats.length === 0) return '';
+
+  const lines: string[] = ['\n\nOPPONENT THREATS — what your opponent can do:'];
+  if (canBuy.length > 0) {
+    lines.push('Cards opponent CAN AFFORD right now (consider reserving high-value ones to block):');
+    lines.push(...canBuy);
+  }
+  if (closeLines.length > 0) {
+    lines.push('Cards opponent is CLOSE to buying (1-2 gems away):');
+    lines.push(...closeLines);
+  }
+  if (nobleThreats.length > 0) {
+    lines.push('Nobles opponent is close to earning (0-2 bonuses away):');
+    lines.push(...nobleThreats);
+  }
+  const oppPts = getPlayerPoints(opponent);
+  if (oppPts >= 12) {
+    lines.push(`WARNING: Opponent has ${oppPts} points — they are close to winning! Prioritize points over engine-building.`);
+  }
   return lines.join('\n');
 }
 
