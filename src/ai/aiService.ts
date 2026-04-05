@@ -8,6 +8,7 @@ import type {
 import type { AiAction, AiConfig, AiResponse } from './aiTypes';
 import { COLORED_GEMS } from '../game/constants';
 import { getPlayerBonuses, getPlayerPoints, getEffectiveCost, canAfford } from '../game/selectors';
+import { getToken } from '../online/socketClient';
 
 // ── Abbreviation Maps ───────────────────────────────────────
 
@@ -381,9 +382,13 @@ async function callAiProxy(
     ...buildMessages(systemPrompt, userPrompt, config),
   };
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch('/api/ai/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
 

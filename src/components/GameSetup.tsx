@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { AiProvider } from '../ai/aiTypes';
+import { getToken } from '../online/socketClient';
 import OnlineLobby from './OnlineLobby';
 import RulesModal from './RulesModal';
 
@@ -56,9 +57,13 @@ export default function GameSetup() {
           ? { system: 'Reply with OK.', messages: [{ role: 'user', content: 'ping' }] }
           : { messages: [{ role: 'system', content: 'Reply with OK.' }, { role: 'user', content: 'ping' }] }),
       };
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const token = getToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body),
       });
       if (!res.ok) {
