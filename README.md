@@ -1,23 +1,23 @@
 # Splendor
 
-A fully playable browser-based implementation of the Splendor board game. Supports 2-player local multiplayer and 1-player vs AI mode powered by any LLM of your choice.
+A fully playable browser-based implementation of the Splendor board game. Supports 2-player local mode, 2-player online mode via WebSocket rooms, and 1-player vs AI mode powered by any LLM of your choice.
 
 ## Screenshots
 
-| Setup Screen | Game Board |
-|---|---|
-| ![Setup screen](docs/screenshots/setup.png) | ![Game board](docs/screenshots/game-board.png) |
+![Game board](docs/screenshots/game-board.png)
 
-| AI Reasoning Panel | Game Over |
-|---|---|
-| ![AI reasoning](docs/screenshots/ai-reasoning.png) | ![Game over](docs/screenshots/game-over.png) |
+| Game Setup | AI Reasoning | Game Over |
+|---|---|---|
+| ![Setup screen](docs/screenshots/setup.png) | ![AI reasoning](docs/screenshots/ai-reasoning.png) | ![Game over](docs/screenshots/game-over.png) |
 
 ## Features
 
 - **Full Splendor rules** — gem taking, card purchasing, card reserving (visible + blind from deck), noble tile claiming, gold wildcard, gem discard when over 10
 - **2-player local mode** — pass-and-play on a single device
+- **2-player online mode** — create a room and share a link; real-time play via WebSocket
 - **1-player vs AI mode** — plug in any LLM via API key; the AI explains its reasoning after each move
 - **Multi-provider AI support** — Anthropic, OpenAI, Google Gemini, OpenRouter, or any OpenAI-compatible custom endpoint
+- **Flying animations** — gems and cards animate from source to player panel on every move
 - **Dark luxury UI** — gem-colored cards, animated interactions, responsive layout
 
 ## Tech Stack
@@ -27,8 +27,8 @@ A fully playable browser-based implementation of the Splendor board game. Suppor
 | UI | React 18 + TypeScript |
 | State | Zustand |
 | Build | Vite |
-| Tests | Vitest (101 tests) |
-| AI proxy | Express (Node.js) |
+| Tests | Vitest (189 tests) |
+| Server | Express + Socket.io |
 
 ## Getting Started
 
@@ -58,7 +58,7 @@ Supported providers and example model names:
 
 | Provider | Example model |
 |---|---|
-| Anthropic | `claude-sonnet-4-20250514` |
+| Anthropic | `claude-sonnet-4-6` |
 | OpenAI | `gpt-4o` |
 | Google Gemini | `gemini-2.5-flash` |
 | OpenRouter | `anthropic/claude-sonnet-4` |
@@ -75,7 +75,7 @@ src/
   store/        # Zustand store — single source of truth
   components/   # React UI components
 server/
-  index.ts      # Express proxy — forwards AI API calls to avoid CORS / key exposure
+  index.ts      # Express + Socket.io server — AI proxy, online multiplayer, auth
 tests/          # Vitest integration tests
 ```
 
@@ -85,7 +85,7 @@ tests/          # Vitest integration tests
 npm run test
 ```
 
-101 tests across 4 files covering engine rules, constants validation, store actions, and the AI service.
+189 tests across 8 files covering engine rules, constants validation, store actions, AI service, auth, socket handlers, and room management.
 
 ## Rules Reference
 
