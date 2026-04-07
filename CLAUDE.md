@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Fully playable browser-based Splendor board game supporting 2-player local mode, 1-player vs AI mode, and 2-player online mode via WebSocket rooms. Stack: TypeScript, React 18, Zustand, Vite, Vitest + Express/Socket.io server. Deployed on Railway via Docker. All implementation phases (1–10) are complete — 189 tests passing across 8 test files, production build clean.
+Fully playable browser-based Splendor board game supporting 2-player local mode, 1-player vs AI mode, and 2-player online mode via WebSocket rooms. Stack: TypeScript, React 19, Zustand, Vite, Vitest + Express/Socket.io server. Deployed on Railway via Docker. All implementation phases (1–10) are complete — 189 tests passing across 8 test files, production build clean.
 
 ## Commands
 
@@ -68,6 +68,7 @@ Online mode:
   - `TurnIndicator.tsx` — Current player indicator
   - `DiscardModal.tsx` — Gem discard when over 10
   - `NobleModal.tsx` — Noble selection when eligible; shows waiting message for opponent in online mode
+  - `RulesModal.tsx` — In-game rules reference modal explaining how to play Splendor
   - `GameOver.tsx` — Winner display with play-again option
 - `server/` — Express + Socket.io server
   - `index.ts` — Server entry point; health endpoint, auth endpoint, AI proxy, static file serving, Socket.io setup, graceful shutdown
@@ -88,6 +89,7 @@ Online mode:
 - `.github/workflows/ci.yml` — CI pipeline: build + test on push/PR to main
 - `.dockerignore` — Excludes node_modules, dist, .git, tests, *.md from Docker context
 - `DEPLOYMENT.md` — Deployment guide for Railway
+- `deploy.md` — Additional deployment notes
 - `RCA/` — Root cause analysis docs for production incidents
 
 ### Important type distinctions
