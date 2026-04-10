@@ -9,4 +9,5 @@ src/game/*.js.map
 
 # Local-only files
 deploy.md
+evals-draft.md
 logs/

@@ -1068,7 +1068,48 @@ button:not(:disabled):hover {
   color: #8a9ab8;
   text-transform: uppercase;
   letter-spacing: 2px;
+  margin: 0;
+}
+
+.ai-reasoning-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 8px;
+}
+
+.ai-reasoning-panel.collapsed .ai-reasoning-header {
+  margin-bottom: 0;
+}
+
+.ai-reasoning-panel.collapsed {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.ai-reasoning-toggle {
+  background: #1f2c44;
+  border: 1px solid #34466a;
+  color: #c8d4ea;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ai-reasoning-toggle:hover {
+  background: #2a3a59;
+  border-color: #4a5d82;
+  color: #ffffff;
+}
+
+.ai-reasoning-toggle:active {
+  background: #182236;
 }
 
 .ai-status-idle {
