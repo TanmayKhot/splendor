@@ -6,6 +6,10 @@ import { useAnimation } from './AnimationProvider';
 
 const ALL_GEMS: GemColor[] = [...COLORED_GEMS, 'gold'];
 
+function gemDisplayName(color: string): string {
+  return color === 'black' ? 'brown' : color;
+}
+
 export default function GemPool() {
   const gemSupply = useGameStore(s => s.board.gemSupply);
   const takeGems = useGameStore(s => s.takeGems);
@@ -81,14 +85,14 @@ export default function GemPool() {
             onClick={() => handleClick(color)}
           >
             {gemSupply[color]}
-            <span className="token-label">{color}</span>
+            <span className="token-label">{gemDisplayName(color)}</span>
           </button>
         ))}
       </div>
       {selected.length > 0 && (
         <div className="gem-selection-actions">
           <button className="btn-confirm" onClick={handleConfirm}>
-            Take {isTake2 ? `2 ${selected[0]}` : `${selected.length} gem${selected.length !== 1 ? 's' : ''}`}
+            Take {isTake2 ? `2 ${gemDisplayName(selected[0])}` : `${selected.length} gem${selected.length !== 1 ? 's' : ''}`}
           </button>
           <button className="btn-cancel" onClick={handleCancel}>Cancel</button>
         </div>

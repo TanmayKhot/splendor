@@ -37,7 +37,7 @@ button:not(:disabled):hover {
 .gem-blue   { background: #1d4ed8; color: #fff; box-shadow: inset 0 1px 3px rgba(147,197,253,0.4); }
 .gem-green  { background: #15803d; color: #fff; box-shadow: inset 0 1px 3px rgba(134,239,172,0.4); }
 .gem-red    { background: #b91c1c; color: #fff; box-shadow: inset 0 1px 3px rgba(252,165,165,0.4); }
-.gem-black  { background: #1a1a2e; color: #ddd; border: 1px solid #555; box-shadow: inset 0 1px 3px rgba(255,255,255,0.1); }
+.gem-black  { background: #3b2314; color: #ddd; border: 1px solid #6b4226; box-shadow: inset 0 1px 3px rgba(255,255,255,0.1); }
 .gem-gold   { background: linear-gradient(135deg, #f5c518, #e6a817); color: #1a1008; box-shadow: inset 0 1px 3px rgba(255,230,120,0.5); }
 
 /* ── App layout ────────────────────────────────────── */
@@ -563,8 +563,8 @@ button:not(:disabled):hover {
   border-color: #c83030;
 }
 .card-color-black  {
-  background: linear-gradient(145deg, #282830, #1c1c24);
-  border-color: #8888aa;
+  background: linear-gradient(145deg, #2b1805, #1e1003);
+  border-color: #5a3720;
 }
 
 .card-label {

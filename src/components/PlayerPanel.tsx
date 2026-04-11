@@ -6,23 +6,27 @@ import { useAnimation } from './AnimationProvider';
 
 const ALL_GEMS: GemColor[] = [...COLORED_GEMS, 'gold'];
 
+function gemDisplayName(color: string): string {
+  return color === 'black' ? 'brown' : color;
+}
+
 function formatLastMove(move: LastMove): string {
   switch (move.type) {
     case 'takeGems': {
       const counts: Partial<Record<string, number>> = {};
       for (const c of move.colors) counts[c] = (counts[c] ?? 0) + 1;
-      const parts = Object.entries(counts).map(([c, n]) => `${n} ${c}`);
+      const parts = Object.entries(counts).map(([c, n]) => `${n} ${gemDisplayName(c)}`);
       return `Took ${parts.join(', ')}`;
     }
     case 'take2Gems':
-      return `Took 2 ${move.color}`;
+      return `Took 2 ${gemDisplayName(move.color)}`;
     case 'reserveCard':
-      return `Reserved ${move.gemBonus} card${move.prestigePoints > 0 ? ` (${move.prestigePoints} pts)` : ''}`;
+      return `Reserved ${gemDisplayName(move.gemBonus)} card${move.prestigePoints > 0 ? ` (${move.prestigePoints} pts)` : ''}`;
     case 'purchaseCard': {
       const costParts = (Object.entries(move.cost) as [ColoredGem, number][])
         .filter(([, n]) => n > 0)
-        .map(([c, n]) => `${n} ${c}`);
-      return `Bought ${move.gemBonus} card (${move.prestigePoints} pts) for ${costParts.join(', ') || 'free'}`;
+        .map(([c, n]) => `${n} ${gemDisplayName(c)}`);
+      return `Bought ${gemDisplayName(move.gemBonus)} card (${move.prestigePoints} pts) for ${costParts.join(', ') || 'free'}`;
     }
   }
 }
