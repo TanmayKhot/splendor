@@ -61,6 +61,7 @@ export interface GameStore extends GameState {
   aiConfig: AiConfig | null;
   aiState: AiState;
   onlineState: OnlineState | null;
+  opponentLeftMessage: string | null;
 
   initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig) => void;
   resetGame: () => void;
@@ -97,6 +98,7 @@ const initialStoreState = {
   aiConfig: null as AiConfig | null,
   aiState: { ...initialAiState },
   onlineState: null as OnlineState | null,
+  opponentLeftMessage: null as string | null,
 };
 
 function setLastMove(lastMoves: [LastMove | null, LastMove | null], playerIndex: 0 | 1, move: LastMove): [LastMove | null, LastMove | null] {

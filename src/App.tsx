@@ -1,5 +1,6 @@
 import './App.css';
 import { useGameStore } from './store/gameStore';
+import { getSocket, clearStoredRoom } from './online/socketClient';
 import GameSetup from './components/GameSetup';
 import TurnIndicator from './components/TurnIndicator';
 import NobleRow from './components/NobleRow';
@@ -22,11 +23,35 @@ function AppContent() {
   const aiMode = useGameStore(s => s.aiMode);
   const aiThinking = useGameStore(s => s.aiMode && s.currentPlayerIndex === 1 && s.aiState.status === 'thinking');
   const onlineState = useGameStore(s => s.onlineState);
+  const resetGame = useGameStore(s => s.resetGame);
+  const opponentLeftMessage = useGameStore(s => s.opponentLeftMessage);
+
+  function handleQuit() {
+    if (onlineState) {
+      const socket = getSocket();
+      socket.emit('room:leave', { code: onlineState.roomCode });
+      clearStoredRoom();
+      useGameStore.setState({ onlineState: null });
+    }
+    resetGame();
+  }
+
+  function dismissOpponentLeft() {
+    useGameStore.setState({ opponentLeftMessage: null });
+  }
 
   if (phase === 'setup') {
     return (
       <div className="app">
         <h1><a href="/" onClick={e => { e.preventDefault(); window.history.pushState({}, '', '/'); window.location.reload(); }}>Splendor</a></h1>
+        {opponentLeftMessage && (
+          <div className="modal-overlay">
+            <div className="modal opponent-left-modal">
+              <p>{opponentLeftMessage}</p>
+              <button className="btn-confirm" onClick={dismissOpponentLeft}>OK</button>
+            </div>
+          </div>
+        )}
         <GameSetup />
       </div>
     );
@@ -50,7 +75,10 @@ function AppContent() {
         />
       )}
       <div className={`app ${aiThinking ? 'ai-turn-active' : ''}`}>
-        <h1>Splendor</h1>
+        <div className="game-header">
+          <h1>Splendor</h1>
+          <button className="btn-quit" onClick={handleQuit}>Quit Game</button>
+        </div>
         <TurnIndicator />
         {aiMode && <AiPlayerController />}
         <div className="board">

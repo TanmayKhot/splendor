@@ -117,9 +117,18 @@ export function setupSocketListeners(s: Socket): void {
   });
 
   s.on('room:destroyed', ({ reason }) => {
+    const store = useGameStore.getState();
+    const wasInGame = store.phase === 'playing' || store.phase === 'ending';
+    const opponentName = store.onlineState?.opponentNickname || 'Opponent';
+
     clearStoredRoom();
-    useGameStore.getState().resetGame();
+    store.resetGame();
     set({ onlineState: null });
+
+    // If the game was in progress, show a popup with the opponent's name
+    if (wasInGame && (reason === 'player_left' || reason === 'opponent_disconnected')) {
+      set({ opponentLeftMessage: `${opponentName} has left the game.` });
+    }
 
     // Surface reason as a lobby-level message if back at setup
     const reasons: Record<string, string> = {

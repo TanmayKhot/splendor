@@ -64,6 +64,44 @@ button:not(:disabled):hover {
   filter: drop-shadow(0 0 8px rgba(245,197,24,0.3));
 }
 
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 0;
+}
+
+.game-header h1 {
+  margin-bottom: 0;
+}
+
+.btn-quit {
+  position: absolute;
+  right: 0;
+  background: transparent;
+  border: 1px solid #4a3040;
+  color: #cc6666;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-quit:hover {
+  background: #2a1520;
+  border-color: #cc6666;
+  color: #ff8888;
+}
+
+.btn-quit:active {
+  background: #1a0c12;
+}
+
 .app h1 a {
   color: inherit;
   text-decoration: none;
@@ -956,6 +994,15 @@ button:not(:disabled):hover {
 .modal p {
   margin-bottom: 12px;
   color: #aabbd0;
+}
+
+.opponent-left-modal {
+  text-align: center;
+}
+
+.opponent-left-modal p {
+  font-size: 1rem;
+  margin-bottom: 20px;
 }
 
 /* ── Discard Modal ─────────────────────────────────── */
