@@ -5,9 +5,48 @@ import { getToken } from '../online/socketClient';
 import OnlineLobby from './OnlineLobby';
 import RulesModal from './RulesModal';
 
+const PROVIDER_MODELS: Partial<Record<AiProvider, { id: string; label: string }[]>> = {
+  anthropic: [
+    { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
+    { id: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
+    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+    { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
+    { id: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
+    { id: 'claude-opus-4-1', label: 'Claude Opus 4.1' },
+    { id: 'claude-sonnet-4-0', label: 'Claude Sonnet 4' },
+    { id: 'claude-opus-4-0', label: 'Claude Opus 4' },
+  ],
+  openai: [
+    { id: 'gpt-5.4-pro', label: 'GPT-5.4 Pro' },
+    { id: 'gpt-5.4', label: 'GPT-5.4' },
+    { id: 'gpt-5.4-mini', label: 'GPT-5.4 Mini' },
+    { id: 'gpt-5.4-nano', label: 'GPT-5.4 Nano' },
+    { id: 'gpt-5-thinking', label: 'GPT-5 Thinking' },
+    { id: 'gpt-5-thinking-mini', label: 'GPT-5 Thinking Mini' },
+    { id: 'gpt-5-thinking-nano', label: 'GPT-5 Thinking Nano' },
+    { id: 'gpt-5.3-codex', label: 'GPT-5.3 Codex' },
+    { id: 'o4-mini', label: 'o4-mini' },
+    { id: 'o3-pro', label: 'o3-pro' },
+    { id: 'o3', label: 'o3' },
+    { id: 'o3-mini', label: 'o3-mini' },
+    { id: 'o1-pro', label: 'o1-pro' },
+    { id: 'o1', label: 'o1' },
+    { id: 'o1-preview', label: 'o1-preview' },
+  ],
+  gemini: [
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' },
+    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (Preview)' },
+    { id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)' },
+    { id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite (Preview)' },
+    { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  ],
+};
+
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-sonnet-4-6',
-  openai: 'gpt-4o',
+  openai: 'gpt-5.4-pro',
   gemini: 'gemini-2.5-flash',
   openrouter: 'anthropic/claude-sonnet-4',
   custom: 'gpt-4o',
@@ -161,11 +200,19 @@ export default function GameSetup() {
 
                 <label className="ai-field">
                   <span>Model</span>
-                  <input
-                    value={model}
-                    onChange={e => setModel(e.target.value)}
-                    placeholder="Model name"
-                  />
+                  {PROVIDER_MODELS[provider] ? (
+                    <select value={model} onChange={e => setModel(e.target.value)}>
+                      {PROVIDER_MODELS[provider]!.map(m => (
+                        <option key={m.id} value={m.id}>{m.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      value={model}
+                      onChange={e => setModel(e.target.value)}
+                      placeholder="Model name"
+                    />
+                  )}
                 </label>
 
                 <label className="ai-field">
