@@ -24,9 +24,13 @@ export default function Card({ card, showActions = true, showLabel = false }: Ca
   const onlineState = useGameStore(s => s.onlineState);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
+  const goldSupply = useGameStore(s => s.board.gemSupply.gold);
+  const reservedCount = useGameStore(s => s.players[s.currentPlayerIndex].reserved.length);
+
   const affordable = canAfford(card, player);
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
+  const canReserve = goldSupply > 0 && reservedCount < 3;
 
   const costs = COLORED_GEMS.filter(c => (card.cost[c] ?? 0) > 0);
 
@@ -55,7 +59,7 @@ export default function Card({ card, showActions = true, showLabel = false }: Ca
           </button>
           <button
             className="btn-reserve"
-            disabled={blocked}
+            disabled={blocked || !canReserve}
             onClick={() => reserveCard(card)}
           >
             Reserve

@@ -16,10 +16,14 @@ export default function CardTiers() {
   const onlineState = useGameStore(s => s.onlineState);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
 
+  const goldSupply = useGameStore(s => s.board.gemSupply.gold);
+  const reservedCount = useGameStore(s => s.players[s.currentPlayerIndex].reserved.length);
+
   const { suppressedCardIds } = useAnimation();
 
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;
   const blocked = !!pendingDiscard || !!pendingNobles || !isMyTurn;
+  const canReserve = goldSupply > 0 && reservedCount < 3;
 
   return (
     <div className="card-tiers">
@@ -32,7 +36,7 @@ export default function CardTiers() {
           <div key={tier} className="card-tier">
             <button
               className="deck-button"
-              disabled={deckSize === 0 || blocked}
+              disabled={deckSize === 0 || blocked || !canReserve}
               onClick={() => reserveCard({ fromDeck: tier })}
             >
               <span>Tier {tier}</span>
