@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { AiProvider } from '../ai/aiTypes';
 import { getToken } from '../online/socketClient';
+import { loadProfile, updateProfile, updateProviderConfig } from '../store/profileService';
 import OnlineLobby from './OnlineLobby';
 import RulesModal from './RulesModal';
 
@@ -53,17 +54,19 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 };
 
 export default function GameSetup() {
-  const [p1Name, setP1Name] = useState('');
+  const [savedProfile] = useState(() => loadProfile());
+  const savedProviderConfig = savedProfile.apiKeys[savedProfile.preferredProvider];
+  const [p1Name, setP1Name] = useState(savedProfile.playerName);
   const [p2Name, setP2Name] = useState('');
   const [inviteCode] = useState(() => {
     const match = window.location.pathname.match(/^\/room\/([A-Z0-9]{6})$/i);
     return match ? match[1].toUpperCase() : '';
   });
   const [mode, setMode] = useState<'local' | 'ai' | 'online'>(inviteCode ? 'online' : 'local');
-  const [provider, setProvider] = useState<AiProvider>('anthropic');
-  const [model, setModel] = useState(DEFAULT_MODELS.anthropic);
-  const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState('');
+  const [provider, setProvider] = useState<AiProvider>(savedProfile.preferredProvider);
+  const [model, setModel] = useState(savedProviderConfig?.model || DEFAULT_MODELS[savedProfile.preferredProvider]);
+  const [apiKey, setApiKey] = useState(savedProviderConfig?.apiKey || '');
+  const [baseUrl, setBaseUrl] = useState(savedProviderConfig?.baseUrl || '');
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testError, setTestError] = useState('');
   const [showRules, setShowRules] = useState(false);
@@ -79,7 +82,10 @@ export default function GameSetup() {
 
   function handleProviderChange(newProvider: AiProvider) {
     setProvider(newProvider);
-    setModel(DEFAULT_MODELS[newProvider]);
+    const saved = loadProfile().apiKeys[newProvider];
+    setModel(saved?.model || DEFAULT_MODELS[newProvider]);
+    setApiKey(saved?.apiKey || '');
+    setBaseUrl(saved?.baseUrl || '');
     setTestStatus('idle');
   }
 
@@ -117,7 +123,13 @@ export default function GameSetup() {
   }
 
   function handleStart() {
+    updateProfile({ playerName: p1Name.trim(), preferredProvider: provider });
     if (isAi) {
+      updateProviderConfig(provider, {
+        apiKey,
+        model,
+        ...(provider === 'custom' ? { baseUrl } : {}),
+      });
       initGame(p1Name.trim(), '', true, {
         provider,
         model,
