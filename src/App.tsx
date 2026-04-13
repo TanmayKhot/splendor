@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './App.css';
 import { useGameStore } from './store/gameStore';
 import { getSocket, clearStoredRoom } from './online/socketClient';
@@ -14,6 +15,7 @@ import AiPlayerController from './components/AiPlayerController';
 import AiReasoningPanel from './components/AiReasoningPanel';
 import PasswordGate from './components/PasswordGate';
 import ConnectionBanner from './components/ConnectionBanner';
+import SettingsModal from './components/SettingsModal';
 import AnimationProvider from './components/AnimationProvider';
 
 function AppContent() {
@@ -25,6 +27,7 @@ function AppContent() {
   const onlineState = useGameStore(s => s.onlineState);
   const resetGame = useGameStore(s => s.resetGame);
   const opponentLeftMessage = useGameStore(s => s.opponentLeftMessage);
+  const [showSettings, setShowSettings] = useState(false);
 
   function handleQuit() {
     if (onlineState) {
@@ -53,6 +56,10 @@ function AppContent() {
           </div>
         )}
         <GameSetup />
+        <button type="button" className="btn-settings" onClick={() => setShowSettings(true)}>
+          Settings
+        </button>
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     );
   }
@@ -62,6 +69,10 @@ function AppContent() {
       <div className="app">
         <h1>Splendor</h1>
         <GameOver />
+        <button type="button" className="btn-settings" onClick={() => setShowSettings(true)}>
+          Settings
+        </button>
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     );
   }
