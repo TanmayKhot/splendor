@@ -5,6 +5,7 @@ import { getToken } from '../online/socketClient';
 import { loadProfile, updateProfile, updateProviderConfig } from '../store/profileService';
 import OnlineLobby from './OnlineLobby';
 import RulesModal from './RulesModal';
+import SettingsModal from './SettingsModal';
 
 const PROVIDER_MODELS: Partial<Record<AiProvider, { id: string; label: string }[]>> = {
   anthropic: [
@@ -70,6 +71,7 @@ export default function GameSetup() {
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testError, setTestError] = useState('');
   const [showRules, setShowRules] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const initGame = useGameStore(s => s.initGame);
 
   const isAi = mode === 'ai';
@@ -144,13 +146,28 @@ export default function GameSetup() {
   return (
     <div className="game-setup">
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+      {showSettings && <SettingsModal onClose={() => {
+        setShowSettings(false);
+        const fresh = loadProfile();
+        const freshConfig = fresh.apiKeys[fresh.preferredProvider];
+        setP1Name(fresh.playerName);
+        setProvider(fresh.preferredProvider);
+        setModel(freshConfig?.model || DEFAULT_MODELS[fresh.preferredProvider]);
+        setApiKey(freshConfig?.apiKey || '');
+        setBaseUrl(freshConfig?.baseUrl || '');
+      }} />}
 
       {!inviteCode && (
         <>
           <h2>New Game</h2>
-          <button type="button" className="btn-rules" onClick={() => setShowRules(true)}>
-            How to Play
-          </button>
+          <div className="setup-top-buttons">
+            <button type="button" className="btn-rules" onClick={() => setShowRules(true)}>
+              How to Play
+            </button>
+            <button type="button" className="btn-rules" onClick={() => setShowSettings(true)}>
+              Settings
+            </button>
+          </div>
 
           <div className="mode-toggle">
             <button

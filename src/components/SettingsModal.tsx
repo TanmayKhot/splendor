@@ -3,12 +3,11 @@ import type { AiProvider } from '../ai/aiTypes';
 import { getToken } from '../online/socketClient';
 import {
   loadProfile,
-  updateProfile,
-  updateProviderConfig,
+  saveProfile,
   resetStats,
   resetProfile,
 } from '../store/profileService';
-import type { ProviderConfig } from '../store/profileTypes';
+import type { ProviderConfig, UserProfile } from '../store/profileTypes';
 
 const PROVIDERS: { id: AiProvider; label: string }[] = [
   { id: 'anthropic', label: 'Anthropic' },
@@ -70,32 +69,37 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ onClose }: SettingsModalProps) {
-  const [profile, setProfile] = useState(() => loadProfile());
+  const [draft, setDraft] = useState<UserProfile>(() => loadProfile());
+  const [saved, setSaved] = useState(false);
   const [expandedProvider, setExpandedProvider] = useState<AiProvider | null>(null);
   const [showKeys, setShowKeys] = useState<Partial<Record<AiProvider, boolean>>>({});
   const [testStatus, setTestStatus] = useState<Partial<Record<AiProvider, 'idle' | 'testing' | 'success' | 'error'>>>({});
   const [testError, setTestError] = useState<Partial<Record<AiProvider, string>>>({});
 
-  function handleNameChange(name: string) {
-    const updated = updateProfile({ playerName: name });
-    setProfile(updated);
+  function updateDraft(partial: Partial<UserProfile>) {
+    setDraft(prev => ({ ...prev, ...partial }));
+    setSaved(false);
   }
 
-  function handlePreferredProviderChange(provider: AiProvider) {
-    const updated = updateProfile({ preferredProvider: provider });
-    setProfile(updated);
-  }
-
-  function handleProviderConfigChange(provider: AiProvider, partial: Partial<ProviderConfig>) {
-    const existing = profile.apiKeys[provider] || { apiKey: '', model: DEFAULT_MODELS[provider] };
-    const config: ProviderConfig = { ...existing, ...partial };
-    const updated = updateProviderConfig(provider, config);
-    setProfile(updated);
+  function updateDraftProviderConfig(provider: AiProvider, partial: Partial<ProviderConfig>) {
+    setDraft(prev => {
+      const existing = prev.apiKeys[provider] || { apiKey: '', model: DEFAULT_MODELS[provider] };
+      return {
+        ...prev,
+        apiKeys: { ...prev.apiKeys, [provider]: { ...existing, ...partial } },
+      };
+    });
+    setSaved(false);
     setTestStatus(s => ({ ...s, [provider]: 'idle' }));
   }
 
+  function handleSave() {
+    saveProfile(draft);
+    setSaved(true);
+  }
+
   async function testConnection(provider: AiProvider) {
-    const config = profile.apiKeys[provider];
+    const config = draft.apiKeys[provider];
     if (!config?.apiKey) return;
 
     setTestStatus(s => ({ ...s, [provider]: 'testing' }));
@@ -133,16 +137,18 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   function handleResetStats() {
     if (!window.confirm('Reset all game stats? This cannot be undone.')) return;
     const updated = resetStats();
-    setProfile(updated);
+    setDraft(updated);
+    setSaved(true);
   }
 
   function handleClearAll() {
     if (!window.confirm('Clear all saved data (API keys, stats, preferences)? This cannot be undone.')) return;
     resetProfile();
-    setProfile(loadProfile());
+    setDraft(loadProfile());
+    setSaved(true);
   }
 
-  const { stats } = profile;
+  const { stats } = draft;
 
   function winRate(wins: number, games: number): string {
     return games === 0 ? '-' : `${Math.round((wins / games) * 100)}%`;
@@ -151,7 +157,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   return (
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-modal" onClick={e => e.stopPropagation()}>
-        <button className="settings-close" onClick={onClose} aria-label="Close settings">✕</button>
+        <button className="settings-close" onClick={onClose} aria-label="Close settings">&#10005;</button>
 
         <h2 className="settings-title">Settings</h2>
 
@@ -160,8 +166,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           <h3>Player Name</h3>
           <label className="settings-field">
             <input
-              value={profile.playerName}
-              onChange={e => handleNameChange(e.target.value)}
+              value={draft.playerName}
+              onChange={e => updateDraft({ playerName: e.target.value })}
               placeholder="Enter your name"
             />
           </label>
@@ -172,8 +178,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           <h3>Preferred AI Provider</h3>
           <label className="settings-field">
             <select
-              value={profile.preferredProvider}
-              onChange={e => handlePreferredProviderChange(e.target.value as AiProvider)}
+              value={draft.preferredProvider}
+              onChange={e => updateDraft({ preferredProvider: e.target.value as AiProvider })}
             >
               {PROVIDERS.map(p => (
                 <option key={p.id} value={p.id}>{p.label}</option>
@@ -187,7 +193,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           <h3>API Keys</h3>
           <div className="settings-providers">
             {PROVIDERS.map(({ id, label }) => {
-              const config = profile.apiKeys[id];
+              const config = draft.apiKeys[id];
               const isExpanded = expandedProvider === id;
               const models = PROVIDER_MODELS[id];
               const status = testStatus[id] || 'idle';
@@ -215,7 +221,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                           <input
                             type={showKeys[id] ? 'text' : 'password'}
                             value={config?.apiKey || ''}
-                            onChange={e => handleProviderConfigChange(id, { apiKey: e.target.value })}
+                            onChange={e => updateDraftProviderConfig(id, { apiKey: e.target.value })}
                             placeholder="Enter API key"
                           />
                           <button
@@ -233,7 +239,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                         {models ? (
                           <select
                             value={config?.model || DEFAULT_MODELS[id]}
-                            onChange={e => handleProviderConfigChange(id, { model: e.target.value })}
+                            onChange={e => updateDraftProviderConfig(id, { model: e.target.value })}
                           >
                             {models.map(m => (
                               <option key={m.id} value={m.id}>{m.label}</option>
@@ -242,7 +248,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                         ) : (
                           <input
                             value={config?.model || DEFAULT_MODELS[id]}
-                            onChange={e => handleProviderConfigChange(id, { model: e.target.value })}
+                            onChange={e => updateDraftProviderConfig(id, { model: e.target.value })}
                             placeholder="Model name"
                           />
                         )}
@@ -253,7 +259,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                           <span>Base URL</span>
                           <input
                             value={config?.baseUrl || ''}
-                            onChange={e => handleProviderConfigChange(id, { baseUrl: e.target.value })}
+                            onChange={e => updateDraftProviderConfig(id, { baseUrl: e.target.value })}
                             placeholder="https://api.example.com/v1"
                           />
                         </label>
@@ -312,6 +318,9 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 
         {/* Actions */}
         <div className="settings-actions">
+          <button type="button" className="btn-save" onClick={handleSave}>
+            {saved ? 'Saved!' : 'Save'}
+          </button>
           <button type="button" className="btn-danger" onClick={handleResetStats}>
             Reset Stats
           </button>

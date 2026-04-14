@@ -4,6 +4,7 @@ import {
   setupSocketListeners, setupVisibilityHandler,
 } from '../online/socketClient';
 import { useGameStore } from '../store/gameStore';
+import { loadProfile } from '../store/profileService';
 
 type LobbyState = 'idle' | 'waiting' | 'ready';
 
@@ -22,7 +23,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export default function OnlineLobby({ inviteCode = '' }: { inviteCode?: string }) {
   const [lobbyState, setLobbyState] = useState<LobbyState>('idle');
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(() => loadProfile().playerName);
   const [roomCode, setRoomCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [players, setPlayers] = useState<PlayerInfo[]>([]);

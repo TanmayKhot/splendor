@@ -56,10 +56,6 @@ function AppContent() {
           </div>
         )}
         <GameSetup />
-        <button type="button" className="btn-settings" onClick={() => setShowSettings(true)}>
-          Settings
-        </button>
-        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     );
   }
