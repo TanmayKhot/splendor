@@ -5,7 +5,7 @@ import type {
   NobleTile,
   DevelopmentCard,
 } from '../game/types';
-import type { AiAction, AiConfig, AiResponse } from './aiTypes';
+import type { AiAction, AiConfig, AiResponse, AiMoveResult } from './aiTypes';
 import { COLORED_GEMS } from '../game/constants';
 import { getPlayerBonuses, getPlayerPoints, getEffectiveCost, canAfford } from '../game/selectors';
 import { getToken } from '../online/socketClient';
@@ -22,8 +22,8 @@ function compactGems(gems: Partial<Record<string, number>>): Record<string, numb
 
 // ── Prompt Builders ─────────────────────────────────────────
 
-export function buildSystemPrompt(): string {
-  return `You are an expert Splendor board game AI playing as Player 2. Your goal is to win by reaching 15 prestige points before your opponent.
+export function buildSystemPrompt(playerIndex: 0 | 1 = 1): string {
+  return `You are an expert Splendor board game AI playing as Player ${playerIndex + 1}. Your goal is to win by reaching 15 prestige points before your opponent.
 
 RULES SUMMARY:
 - On your turn, choose ONE action: take gems, buy a card, or reserve a card.
@@ -59,13 +59,15 @@ Action schemas:
 CRITICAL: Output ONLY the JSON object. No markdown, no \`\`\`, no text before or after.`;
 }
 
-export function buildGameStatePrompt(state: GameState): string {
-  const p1 = state.players[0];
-  const p2 = state.players[1];
-  const b1 = getPlayerBonuses(p1);
-  const b2 = getPlayerBonuses(p2);
+export function buildGameStatePrompt(state: GameState, aiPlayerIndex: 0 | 1 = 1): string {
+  const me = state.players[aiPlayerIndex];
+  const them = state.players[aiPlayerIndex === 0 ? 1 : 0];
+  const myBonuses = getPlayerBonuses(me);
+  const theirBonuses = getPlayerBonuses(them);
+  const myLabel = `You (P${aiPlayerIndex + 1})`;
+  const oppLabel = `Opponent (P${aiPlayerIndex === 0 ? 2 : 1})`;
 
-  const serializePlayer = (p: typeof p1, bonuses: typeof b1, label: string) => ({
+  const serializePlayer = (p: typeof me, bonuses: typeof myBonuses, label: string) => ({
     name: label,
     pts: getPlayerPoints(p),
     gems: compactGems(p.gems),
@@ -91,8 +93,8 @@ export function buildGameStatePrompt(state: GameState): string {
   });
 
   const gameState = {
-    you: serializePlayer(p2, b2, 'You (P2)'),
-    opp: serializePlayer(p1, b1, 'Opponent (P1)'),
+    you: serializePlayer(me, myBonuses, myLabel),
+    opp: serializePlayer(them, theirBonuses, oppLabel),
     board: {
       gems: compactGems(state.board.gemSupply),
       tier1: state.board.visibleCards[0].map(serializeCard),
@@ -112,8 +114,8 @@ export function buildGameStatePrompt(state: GameState): string {
   };
 
   // Build planning section: cards not yet affordable with remaining cost
-  const planning = buildPlanningSection(state, p2);
-  const threats = buildOpponentThreatsSection(state, p1);
+  const planning = buildPlanningSection(state, me);
+  const threats = buildOpponentThreatsSection(state, them);
 
   return `Current game state:\n${JSON.stringify(gameState)}${planning}${threats}`;
 }
@@ -518,23 +520,30 @@ export async function getAiMove(
   state: GameState,
   legalActions: Action[],
   config: AiConfig,
-): Promise<AiResponse> {
-  const systemPrompt = buildSystemPrompt();
-  const userPrompt = buildGameStatePrompt(state) + '\n\n' + buildLegalMovesPrompt(legalActions);
+  aiPlayerIndex: 0 | 1 = 1,
+): Promise<AiMoveResult> {
+  const systemPrompt = buildSystemPrompt(aiPlayerIndex);
+  const userPrompt = buildGameStatePrompt(state, aiPlayerIndex) + '\n\n' + buildLegalMovesPrompt(legalActions);
 
+  const start = Date.now();
   const responseText = await callAiProxy(config, systemPrompt, userPrompt);
-  return parseAiResponse(responseText, legalActions);
+  const responseTimeMs = Date.now() - start;
+
+  return { ...parseAiResponse(responseText, legalActions), responseTimeMs };
 }
 
 export async function getAiDiscardDecision(
   playerGems: Record<GemColor, number>,
   excessCount: number,
   config: AiConfig,
-): Promise<AiResponse> {
-  const systemPrompt = buildSystemPrompt();
+  aiPlayerIndex: 0 | 1 = 1,
+): Promise<AiMoveResult> {
+  const systemPrompt = buildSystemPrompt(aiPlayerIndex);
   const userPrompt = buildDiscardPrompt(playerGems, excessCount);
 
+  const start = Date.now();
   const responseText = await callAiProxy(config, systemPrompt, userPrompt);
+  const responseTimeMs = Date.now() - start;
 
   let parsed: { reasoning?: string[]; action?: AiAction };
   try {
@@ -547,6 +556,7 @@ export async function getAiDiscardDecision(
     return {
       reasoning: ['AI returned malformed JSON for discard — using fallback.'],
       action: buildFallbackDiscard(playerGems, excessCount),
+      responseTimeMs,
     };
   }
 
@@ -555,12 +565,13 @@ export async function getAiDiscardDecision(
     : ['No reasoning provided.'];
 
   if (parsed.action?.type === 'discardGems' && parsed.action.gems) {
-    return { reasoning, action: parsed.action };
+    return { reasoning, action: parsed.action, responseTimeMs };
   }
 
   return {
     reasoning: [...reasoning, 'Invalid discard action — using fallback.'],
     action: buildFallbackDiscard(playerGems, excessCount),
+    responseTimeMs,
   };
 }
 
@@ -589,11 +600,14 @@ function buildFallbackDiscard(
 export async function getAiNobleSelection(
   nobles: NobleTile[],
   config: AiConfig,
-): Promise<AiResponse> {
-  const systemPrompt = buildSystemPrompt();
+  aiPlayerIndex: 0 | 1 = 1,
+): Promise<AiMoveResult> {
+  const systemPrompt = buildSystemPrompt(aiPlayerIndex);
   const userPrompt = buildNobleSelectionPrompt(nobles);
 
+  const start = Date.now();
   const responseText = await callAiProxy(config, systemPrompt, userPrompt);
+  const responseTimeMs = Date.now() - start;
 
   let parsed: { reasoning?: string[]; action?: AiAction };
   try {
@@ -605,6 +619,7 @@ export async function getAiNobleSelection(
     return {
       reasoning: ['AI returned malformed JSON for noble selection — picking first.'],
       action: { type: 'selectNoble', nobleId: nobles[0].id },
+      responseTimeMs,
     };
   }
 
@@ -615,12 +630,13 @@ export async function getAiNobleSelection(
   if (parsed.action?.type === 'selectNoble' && parsed.action.nobleId) {
     const valid = nobles.some(n => n.id === (parsed.action as { type: 'selectNoble'; nobleId: string }).nobleId);
     if (valid) {
-      return { reasoning, action: parsed.action };
+      return { reasoning, action: parsed.action, responseTimeMs };
     }
   }
 
   return {
     reasoning: [...reasoning, 'Invalid noble selection — picking first eligible.'],
     action: { type: 'selectNoble', nobleId: nobles[0].id },
+    responseTimeMs,
   };
 }

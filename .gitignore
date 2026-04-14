@@ -10,4 +10,6 @@ src/game/*.js.map
 # Local-only files
 deploy.md
 evals-draft.md
+ai-vs-ai-plan.md
+local-storage-plan.md
 logs/

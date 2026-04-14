@@ -40,3 +40,42 @@ export interface AiResponse {
   reasoning: string[];
   action: AiAction;
 }
+
+export interface AiMoveResult extends AiResponse {
+  responseTimeMs: number;
+}
+
+// ── AI vs AI Config ───────────────────────────────────────
+
+export interface AiVsAiConfig {
+  player0: AiConfig;
+  player1: AiConfig;
+}
+
+// ── Turn Logging (for evals) ──────────────────────────────
+
+export interface TurnLogEntry {
+  turnCount: number;
+  playerIndex: 0 | 1;
+  provider: AiProvider;
+  model: string;
+  action: AiAction;
+  reasoning: string[];
+  isFallback: boolean;
+  playerPoints: [number, number];
+  actingPlayerBonuses: Record<ColoredGem, number>;
+  actingPlayerTotalGems: number;
+  responseTimeMs: number;
+  timestamp: number;
+}
+
+export interface GameLog {
+  gameId: string;
+  startedAt: number;
+  endedAt: number | null;
+  player0: { name: string; provider: AiProvider; model: string };
+  player1: { name: string; provider: AiProvider; model: string };
+  winnerIndex: 0 | 1 | null;
+  finalScores: [number, number];
+  turns: TurnLogEntry[];
+}
