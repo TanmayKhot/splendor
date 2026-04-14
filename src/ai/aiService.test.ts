@@ -79,6 +79,47 @@ describe('buildGameStatePrompt', () => {
     // Rough estimate: ~4 chars per token; full names + planning section is larger
     expect(prompt.length).toBeLessThan(16000);
   });
+
+  it('defaults to Player 2 perspective (backward compat)', () => {
+    const state = makeSampleState();
+    const prompt = buildGameStatePrompt(state);
+    const jsonStr = prompt.replace('Current game state:\n', '').split('\n\nPLANNING')[0].split('\n\nOPPONENT')[0];
+    const parsed = JSON.parse(jsonStr);
+
+    expect(parsed.you.name).toContain('P2');
+    expect(parsed.opp.name).toContain('P1');
+  });
+
+  it('uses Player 1 perspective when aiPlayerIndex=0', () => {
+    const state = makeSampleState();
+    const prompt = buildGameStatePrompt(state, 0);
+    const jsonStr = prompt.replace('Current game state:\n', '').split('\n\nPLANNING')[0].split('\n\nOPPONENT')[0];
+    const parsed = JSON.parse(jsonStr);
+
+    expect(parsed.you.name).toContain('P1');
+    expect(parsed.opp.name).toContain('P2');
+  });
+
+  it('swaps player data correctly based on perspective', () => {
+    const state = makeSampleState();
+    // Give Player 1 (index 0) some gems so we can verify the swap
+    state.players[0].gems = { white: 5, blue: 0, green: 0, red: 0, black: 0, gold: 0 };
+    state.players[1].gems = { white: 0, blue: 0, green: 0, red: 0, black: 3, gold: 0 };
+
+    // From P1 perspective (index=0): "you" should be P1 with 5 white
+    const promptP1 = buildGameStatePrompt(state, 0);
+    const jsonP1 = promptP1.replace('Current game state:\n', '').split('\n\nPLANNING')[0].split('\n\nOPPONENT')[0];
+    const parsedP1 = JSON.parse(jsonP1);
+    expect(parsedP1.you.gems.white).toBe(5);
+    expect(parsedP1.opp.gems.black).toBe(3);
+
+    // From P2 perspective (index=1): "you" should be P2 with 3 black
+    const promptP2 = buildGameStatePrompt(state, 1);
+    const jsonP2 = promptP2.replace('Current game state:\n', '').split('\n\nPLANNING')[0].split('\n\nOPPONENT')[0];
+    const parsedP2 = JSON.parse(jsonP2);
+    expect(parsedP2.you.gems.black).toBe(3);
+    expect(parsedP2.opp.gems.white).toBe(5);
+  });
 });
 
 describe('buildLegalMovesPrompt', () => {
@@ -105,6 +146,24 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('JSON');
     expect(prompt).toContain('reasoning');
     expect(prompt).toContain('action');
+  });
+
+  it('defaults to Player 2 for backward compatibility', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('Player 2');
+    expect(prompt).not.toContain('Player 1');
+  });
+
+  it('uses Player 1 when playerIndex=0', () => {
+    const prompt = buildSystemPrompt(0);
+    expect(prompt).toContain('Player 1');
+    expect(prompt).not.toContain('Player 2');
+  });
+
+  it('uses Player 2 when playerIndex=1', () => {
+    const prompt = buildSystemPrompt(1);
+    expect(prompt).toContain('Player 2');
+    expect(prompt).not.toContain('Player 1');
   });
 });
 
