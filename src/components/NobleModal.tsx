@@ -21,12 +21,14 @@ function NobleOption({ noble, onSelect }: { noble: NobleTile; onSelect: () => vo
 }
 
 export default function NobleModal() {
+  const aiVsAiMode = useGameStore(s => s.aiVsAiMode);
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const selectNoble = useGameStore(s => s.selectNoble);
   const onlineState = useGameStore(s => s.onlineState);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
   const currentPlayerName = useGameStore(s => s.players[currentPlayerIndex].name);
 
+  if (aiVsAiMode) return null;
   if (!pendingNobles) return null;
 
   const isMyTurn = !onlineState || onlineState.myPlayerIndex === currentPlayerIndex;

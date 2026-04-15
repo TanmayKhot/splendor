@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import type { AiProvider } from '../ai/aiTypes';
+import type { AiProvider, AiVsAiConfig } from '../ai/aiTypes';
 import { getToken } from '../online/socketClient';
 import { loadProfile, updateProfile, updateProviderConfig } from '../store/profileService';
 import OnlineLobby from './OnlineLobby';
@@ -46,6 +46,14 @@ const PROVIDER_MODELS: Partial<Record<AiProvider, { id: string; label: string }[
   ],
 };
 
+const PROVIDERS: { id: AiProvider; label: string }[] = [
+  { id: 'anthropic', label: 'Anthropic' },
+  { id: 'openai', label: 'OpenAI' },
+  { id: 'gemini', label: 'Google Gemini' },
+  { id: 'openrouter', label: 'OpenRouter' },
+  { id: 'custom', label: 'Custom' },
+];
+
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-sonnet-4-6',
   openai: 'gpt-5.4-pro',
@@ -53,6 +61,79 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
   openrouter: 'anthropic/claude-sonnet-4',
   custom: 'gpt-4o',
 };
+
+interface AiConfigPickerProps {
+  label: string;
+  provider: AiProvider;
+  model: string;
+  apiKey: string;
+  baseUrl: string;
+  onProviderChange: (p: AiProvider) => void;
+  onModelChange: (m: string) => void;
+  onApiKeyChange: (k: string) => void;
+  onBaseUrlChange: (u: string) => void;
+}
+
+function AiConfigPicker({ label, provider, model, apiKey, baseUrl, onProviderChange, onModelChange, onApiKeyChange, onBaseUrlChange }: AiConfigPickerProps) {
+  return (
+    <div className="ai-config">
+      <div className="ai-player-label">{label}</div>
+      <label className="ai-field">
+        <span>Provider</span>
+        <select value={provider} onChange={e => {
+          const p = e.target.value as AiProvider;
+          onProviderChange(p);
+          const saved = loadProfile().apiKeys[p];
+          onModelChange(saved?.model || DEFAULT_MODELS[p]);
+          onApiKeyChange(saved?.apiKey || '');
+          onBaseUrlChange(saved?.baseUrl || '');
+        }}>
+          {PROVIDERS.map(p => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+        </select>
+      </label>
+
+      <label className="ai-field">
+        <span>Model</span>
+        {PROVIDER_MODELS[provider] ? (
+          <select value={model} onChange={e => onModelChange(e.target.value)}>
+            {PROVIDER_MODELS[provider]!.map(m => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            value={model}
+            onChange={e => onModelChange(e.target.value)}
+            placeholder="Model name"
+          />
+        )}
+      </label>
+
+      <label className="ai-field">
+        <span>API Key</span>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={e => onApiKeyChange(e.target.value)}
+          placeholder="Enter API key"
+        />
+      </label>
+
+      {provider === 'custom' && (
+        <label className="ai-field">
+          <span>Base URL</span>
+          <input
+            value={baseUrl}
+            onChange={e => onBaseUrlChange(e.target.value)}
+            placeholder="https://api.example.com/v1"
+          />
+        </label>
+      )}
+    </div>
+  );
+}
 
 export default function GameSetup() {
   const [savedProfile] = useState(() => loadProfile());
@@ -63,7 +144,7 @@ export default function GameSetup() {
     const match = window.location.pathname.match(/^\/room\/([A-Z0-9]{6})$/i);
     return match ? match[1].toUpperCase() : '';
   });
-  const [mode, setMode] = useState<'local' | 'ai' | 'online'>(inviteCode ? 'online' : 'local');
+  const [mode, setMode] = useState<'local' | 'ai' | 'online' | 'ai-vs-ai'>(inviteCode ? 'online' : 'local');
   const [provider, setProvider] = useState<AiProvider>(savedProfile.preferredProvider);
   const [model, setModel] = useState(savedProviderConfig?.model || DEFAULT_MODELS[savedProfile.preferredProvider]);
   const [apiKey, setApiKey] = useState(savedProviderConfig?.apiKey || '');
@@ -72,15 +153,27 @@ export default function GameSetup() {
   const [testError, setTestError] = useState('');
   const [showRules, setShowRules] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // AI vs AI state
+  const [p0Provider, setP0Provider] = useState<AiProvider>(savedProfile.preferredProvider);
+  const [p0Model, setP0Model] = useState(savedProviderConfig?.model || DEFAULT_MODELS[savedProfile.preferredProvider]);
+  const [p0ApiKey, setP0ApiKey] = useState(savedProviderConfig?.apiKey || '');
+  const [p0BaseUrl, setP0BaseUrl] = useState(savedProviderConfig?.baseUrl || '');
+  const [p1Provider, setP1Provider] = useState<AiProvider>(savedProfile.preferredProvider);
+  const [p1Model, setP1Model] = useState(savedProviderConfig?.model || DEFAULT_MODELS[savedProfile.preferredProvider]);
+  const [p1ApiKey, setP1ApiKey] = useState(savedProviderConfig?.apiKey || '');
+  const [p1BaseUrl, setP1BaseUrl] = useState(savedProviderConfig?.baseUrl || '');
   const initGame = useGameStore(s => s.initGame);
 
   const isAi = mode === 'ai';
   const isOnline = mode === 'online';
-  const canStart = p1Name.trim() !== '' && (
-    isAi
-      ? apiKey.trim() !== ''
-      : !isOnline && p2Name.trim() !== ''
-  );
+  const isAiVsAi = mode === 'ai-vs-ai';
+  const canStart = isAiVsAi
+    ? p0ApiKey.trim() !== '' && p1ApiKey.trim() !== ''
+    : p1Name.trim() !== '' && (
+        isAi
+          ? apiKey.trim() !== ''
+          : !isOnline && p2Name.trim() !== ''
+      );
 
   function handleProviderChange(newProvider: AiProvider) {
     setProvider(newProvider);
@@ -125,6 +218,25 @@ export default function GameSetup() {
   }
 
   function handleStart() {
+    if (isAiVsAi) {
+      const config: AiVsAiConfig = {
+        player0: {
+          provider: p0Provider,
+          model: p0Model,
+          apiKey: p0ApiKey,
+          ...(p0Provider === 'custom' ? { baseUrl: p0BaseUrl } : {}),
+        },
+        player1: {
+          provider: p1Provider,
+          model: p1Model,
+          apiKey: p1ApiKey,
+          ...(p1Provider === 'custom' ? { baseUrl: p1BaseUrl } : {}),
+        },
+      };
+      initGame('', '', false, undefined, true, config);
+      return;
+    }
+
     updateProfile({ playerName: p1Name.trim(), preferredProvider: provider });
     if (isAi) {
       updateProviderConfig(provider, {
@@ -191,12 +303,49 @@ export default function GameSetup() {
             >
               Play Online
             </button>
+            <button
+              type="button"
+              className={`mode-option ${mode === 'ai-vs-ai' ? 'active' : ''}`}
+              onClick={() => setMode('ai-vs-ai')}
+            >
+              AI vs AI
+            </button>
           </div>
         </>
       )}
 
       {isOnline ? (
         <OnlineLobby inviteCode={inviteCode} />
+      ) : isAiVsAi ? (
+        <>
+          <div className="ai-vs-ai-config">
+            <AiConfigPicker
+              label="Player 1 (AI)"
+              provider={p0Provider}
+              model={p0Model}
+              apiKey={p0ApiKey}
+              baseUrl={p0BaseUrl}
+              onProviderChange={setP0Provider}
+              onModelChange={setP0Model}
+              onApiKeyChange={setP0ApiKey}
+              onBaseUrlChange={setP0BaseUrl}
+            />
+            <AiConfigPicker
+              label="Player 2 (AI)"
+              provider={p1Provider}
+              model={p1Model}
+              apiKey={p1ApiKey}
+              baseUrl={p1BaseUrl}
+              onProviderChange={setP1Provider}
+              onModelChange={setP1Model}
+              onApiKeyChange={setP1ApiKey}
+              onBaseUrlChange={setP1BaseUrl}
+            />
+          </div>
+          <button disabled={!canStart} onClick={handleStart}>
+            Start AI vs AI
+          </button>
+        </>
       ) : (
         <>
           <input

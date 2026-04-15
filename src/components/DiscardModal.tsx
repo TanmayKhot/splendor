@@ -7,8 +7,11 @@ import { getTotalGems } from '../game/selectors';
 const ALL_GEMS: GemColor[] = [...COLORED_GEMS, 'gold'];
 
 export default function DiscardModal() {
+  const aiVsAiMode = useGameStore(s => s.aiVsAiMode);
   const player = useGameStore(s => s.players[s.currentPlayerIndex]);
   const discardGems = useGameStore(s => s.discardGems);
+
+  if (aiVsAiMode) return null;
   const [toDiscard, setToDiscard] = useState<Record<GemColor, number>>({
     white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0,
   });

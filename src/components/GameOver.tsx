@@ -2,11 +2,15 @@ import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayerPoints } from '../game/selectors';
 import { updateStats } from '../store/profileService';
+import { finalizeGameLog, exportGameLogJson } from '../game/turnLogger';
 import type { GameMode } from '../store/profileTypes';
 
 export default function GameOver() {
   const winner = useGameStore(s => s.winner);
   const resetGame = useGameStore(s => s.resetGame);
+  const aiVsAiMode = useGameStore(s => s.aiVsAiMode);
+  const aiVsAiConfig = useGameStore(s => s.aiVsAiConfig);
+  const players = useGameStore(s => s.players);
   const statsRecorded = useRef(false);
 
   useEffect(() => {
@@ -14,6 +18,15 @@ export default function GameOver() {
     statsRecorded.current = true;
 
     const state = useGameStore.getState();
+
+    if (state.aiVsAiMode) {
+      const p0Score = getPlayerPoints(state.players[0]);
+      const p1Score = getPlayerPoints(state.players[1]);
+      const winnerIndex = winner === state.players[0] || winner.name === state.players[0].name ? 0 : 1;
+      finalizeGameLog(winnerIndex as 0 | 1, [p0Score, p1Score]);
+      return;
+    }
+
     const isOnline = state.onlineState !== null;
     const isAi = state.aiMode;
 
@@ -35,6 +48,40 @@ export default function GameOver() {
   }, [winner]);
 
   if (!winner) return null;
+
+  function handleDownloadLog() {
+    const json = exportGameLogJson();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `splendor-game-log-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (aiVsAiMode && aiVsAiConfig) {
+    const p0Score = getPlayerPoints(players[0]);
+    const p1Score = getPlayerPoints(players[1]);
+    const p0Model = aiVsAiConfig.player0.model;
+    const p1Model = aiVsAiConfig.player1.model;
+
+    return (
+      <div className="game-over">
+        <h2>{winner.name} Wins!</h2>
+        <p className="winner-points">{getPlayerPoints(winner)} prestige points</p>
+        <p className="matchup-score">
+          {p0Model}: {p0Score} pts &mdash; {p1Model}: {p1Score} pts
+        </p>
+        <div className="game-over-actions">
+          <button onClick={resetGame}>Play Again</button>
+          <button className="btn-download-log" onClick={handleDownloadLog}>
+            Download Game Log
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="game-over">

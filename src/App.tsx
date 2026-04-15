@@ -12,6 +12,7 @@ import DiscardModal from './components/DiscardModal';
 import NobleModal from './components/NobleModal';
 import GameOver from './components/GameOver';
 import AiPlayerController from './components/AiPlayerController';
+import AiVsAiController from './components/AiVsAiController';
 import AiReasoningPanel from './components/AiReasoningPanel';
 import PasswordGate from './components/PasswordGate';
 import ConnectionBanner from './components/ConnectionBanner';
@@ -23,7 +24,13 @@ function AppContent() {
   const pendingDiscard = useGameStore(s => s.pendingDiscard);
   const pendingNobles = useGameStore(s => s.pendingNobles);
   const aiMode = useGameStore(s => s.aiMode);
-  const aiThinking = useGameStore(s => s.aiMode && s.currentPlayerIndex === 1 && s.aiState.status === 'thinking');
+  const aiVsAiMode = useGameStore(s => s.aiVsAiMode);
+  const aiVsAiPaused = useGameStore(s => s.aiVsAiPaused);
+  const toggleAiVsAiPaused = useGameStore(s => s.toggleAiVsAiPaused);
+  const aiThinking = useGameStore(s =>
+    (s.aiMode && s.currentPlayerIndex === 1 && s.aiState.status === 'thinking') ||
+    (s.aiVsAiMode && s.aiStates[s.currentPlayerIndex].status === 'thinking')
+  );
   const onlineState = useGameStore(s => s.onlineState);
   const resetGame = useGameStore(s => s.resetGame);
   const opponentLeftMessage = useGameStore(s => s.opponentLeftMessage);
@@ -84,10 +91,18 @@ function AppContent() {
       <div className={`app ${aiThinking ? 'ai-turn-active' : ''}`}>
         <div className="game-header">
           <h1>Splendor</h1>
-          <button className="btn-quit" onClick={handleQuit}>Quit Game</button>
+          <div className="game-header-actions">
+            {aiVsAiMode && (
+              <button className="btn-pause" onClick={toggleAiVsAiPaused}>
+                {aiVsAiPaused ? 'Resume' : 'Pause'}
+              </button>
+            )}
+            <button className="btn-quit" onClick={handleQuit}>Quit Game</button>
+          </div>
         </div>
         <TurnIndicator />
         {aiMode && <AiPlayerController />}
+        {aiVsAiMode && <AiVsAiController />}
         <div className="board">
           <div className="board-main">
             <NobleRow />
@@ -97,7 +112,7 @@ function AppContent() {
           <div className="board-side">
             <PlayerPanel playerIndex={0} />
             <PlayerPanel playerIndex={1} />
-            {aiMode && <AiReasoningPanel />}
+            {(aiMode || aiVsAiMode) && <AiReasoningPanel />}
           </div>
         </div>
         {pendingDiscard && <DiscardModal />}

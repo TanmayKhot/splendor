@@ -76,9 +76,15 @@ button:not(:disabled):hover {
   margin-bottom: 0;
 }
 
-.btn-quit {
+.game-header-actions {
   position: absolute;
   right: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-quit {
   background: transparent;
   border: 1px solid #4a3040;
   color: #cc6666;
@@ -100,6 +106,30 @@ button:not(:disabled):hover {
 
 .btn-quit:active {
   background: #1a0c12;
+}
+
+.btn-pause {
+  background: transparent;
+  border: 1px solid #4a5a3a;
+  color: #aacc66;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-pause:hover {
+  background: #1a2520;
+  border-color: #aacc66;
+  color: #ccee88;
+}
+
+.btn-pause:active {
+  background: #0c1a12;
 }
 
 .app h1 a {
@@ -160,8 +190,9 @@ button:not(:disabled):hover {
 /* ── Mode Toggle ──────────────────────────────────── */
 .mode-toggle {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  width: 260px;
+  width: 340px;
 }
 
 .mode-option {
@@ -374,6 +405,18 @@ button:not(:disabled):hover {
   text-transform: none !important;
   letter-spacing: 0 !important;
   font-style: italic;
+}
+
+.ai-vs-ai-config {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.ai-vs-ai-config .ai-config {
+  flex: 1;
+  min-width: 0;
 }
 
 .test-connection {
@@ -1235,6 +1278,72 @@ button:not(:disabled):hover {
   font-weight: 600;
   font-size: 0.8rem;
   padding: 4px 12px;
+}
+
+/* ── AI Reasoning Tabs (AI vs AI) ────────────────── */
+.ai-reasoning-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ai-tab {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #1a2535;
+  border: 1px solid #2a3a55;
+  border-radius: 4px;
+  color: #6a7a9a;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ai-tab:hover {
+  background: #1f2c44;
+  border-color: #3a4f70;
+  color: #aabbd0;
+}
+
+.ai-tab.active {
+  background: #1f2c44;
+  border-color: #f5c518;
+  color: #f5c518;
+}
+
+/* ── Game Over extras ────────────────────────────── */
+.matchup-score {
+  font-size: 0.95rem;
+  color: #8a9ab8;
+  margin-bottom: 20px;
+}
+
+.game-over-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-download-log {
+  padding: 12px 24px;
+  font-size: 1rem;
+  background: #1a2535;
+  border: 1.5px solid #3a4a6a;
+  color: #aabbd0;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-download-log:hover {
+  background: #1f2c44;
+  border-color: #5a6a8a;
+  color: #e8dcc8;
 }
 
 /* ── Password Gate ─────────────────────────────────── */
