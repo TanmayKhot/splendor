@@ -9,7 +9,8 @@ import type {
   GameState,
   GamePhase,
 } from '../game/types';
-import type { AiConfig, AiState } from '../ai/aiTypes';
+import type { AiConfig, AiState, AiVsAiConfig } from '../ai/aiTypes';
+import { createGameLog } from '../game/turnLogger';
 import {
   generateInitialState,
   canTakeGems,
@@ -60,12 +61,18 @@ export interface GameStore extends GameState {
   aiMode: boolean;
   aiConfig: AiConfig | null;
   aiState: AiState;
+  aiVsAiMode: boolean;
+  aiVsAiConfig: AiVsAiConfig | null;
+  aiStates: [AiState, AiState];
+  aiVsAiPaused: boolean;
   onlineState: OnlineState | null;
   opponentLeftMessage: string | null;
 
-  initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig) => void;
+  initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig, aiVsAiMode?: boolean, aiVsAiConfig?: AiVsAiConfig) => void;
   resetGame: () => void;
   setAiState: (state: Partial<AiState>) => void;
+  setAiStateForPlayer: (playerIndex: 0 | 1, partial: Partial<AiState>) => void;
+  toggleAiVsAiPaused: () => void;
   setOnlineState: (state: OnlineState | null) => void;
   applyServerState: (gameState: GameState, pendingDiscard?: boolean, pendingNobles?: NobleTile[], lastMoves?: [LastMove | null, LastMove | null]) => void;
   takeGems: (colors: ColoredGem[]) => void;
@@ -97,6 +104,10 @@ const initialStoreState = {
   aiMode: false,
   aiConfig: null as AiConfig | null,
   aiState: { ...initialAiState },
+  aiVsAiMode: false,
+  aiVsAiConfig: null as AiVsAiConfig | null,
+  aiStates: [{ ...initialAiState }, { ...initialAiState }] as [AiState, AiState],
+  aiVsAiPaused: false,
   onlineState: null as OnlineState | null,
   opponentLeftMessage: null as string | null,
 };
@@ -134,7 +145,30 @@ function postActionChecks(state: GameState): GameState & { pendingNobles: NobleT
 export const useGameStore = create<GameStore>((set, get) => ({
   ...initialStoreState,
 
-  initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig) => {
+  initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig, aiVsAiMode?: boolean, aiVsAiConfig?: AiVsAiConfig) => {
+    if (aiVsAiMode && aiVsAiConfig) {
+      const p1Label = aiVsAiConfig.player0.model;
+      const p2Label = aiVsAiConfig.player1.model;
+      const gameState = generateInitialState(p1Label, p2Label);
+      createGameLog(
+        { name: p1Label, provider: aiVsAiConfig.player0.provider, model: aiVsAiConfig.player0.model },
+        { name: p2Label, provider: aiVsAiConfig.player1.provider, model: aiVsAiConfig.player1.model },
+      );
+      set({
+        ...gameState,
+        pendingNobles: null,
+        pendingDiscard: false,
+        aiMode: false,
+        aiConfig: null,
+        aiState: { ...initialAiState },
+        aiVsAiMode: true,
+        aiVsAiConfig,
+        aiStates: [{ ...initialAiState }, { ...initialAiState }],
+        aiVsAiPaused: false,
+      });
+      return;
+    }
+
     const p2 = aiMode ? 'AI Player' : p2Name;
     const gameState = generateInitialState(p1Name, p2);
     set({
@@ -144,6 +178,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       aiMode: aiMode ?? false,
       aiConfig: aiConfig ?? null,
       aiState: { ...initialAiState },
+      aiVsAiMode: false,
+      aiVsAiConfig: null,
+      aiStates: [{ ...initialAiState }, { ...initialAiState }],
+      aiVsAiPaused: false,
     });
   },
 
@@ -153,6 +191,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setAiState: (partial: Partial<AiState>) => {
     set((state) => ({ aiState: { ...state.aiState, ...partial } }));
+  },
+
+  setAiStateForPlayer: (playerIndex: 0 | 1, partial: Partial<AiState>) => {
+    set((state) => {
+      const aiStates: [AiState, AiState] = [...state.aiStates];
+      aiStates[playerIndex] = { ...aiStates[playerIndex], ...partial };
+      return { aiStates };
+    });
+  },
+
+  toggleAiVsAiPaused: () => {
+    set((state) => ({ aiVsAiPaused: !state.aiVsAiPaused }));
   },
 
   setOnlineState: (onlineState: OnlineState | null) => {
