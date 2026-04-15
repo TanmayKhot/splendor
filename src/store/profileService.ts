@@ -8,6 +8,7 @@ const DEFAULT_STATS: GameStats = {
   localWins: 0, localLosses: 0, localGames: 0,
   aiWins: 0, aiLosses: 0, aiGames: 0,
   onlineWins: 0, onlineLosses: 0, onlineGames: 0,
+  aiVsAiGames: 0,
 };
 
 export function getDefaultProfile(): UserProfile {
@@ -83,6 +84,8 @@ export function updateStats(mode: GameMode, won: boolean): UserProfile {
   } else if (mode === 'ai') {
     stats.aiGames++;
     if (won) stats.aiWins++; else stats.aiLosses++;
+  } else if (mode === 'ai-vs-ai') {
+    stats.aiVsAiGames++;
   } else {
     stats.onlineGames++;
     if (won) stats.onlineWins++; else stats.onlineLosses++;

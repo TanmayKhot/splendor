@@ -24,6 +24,7 @@ export default function GameOver() {
       const p1Score = getPlayerPoints(state.players[1]);
       const winnerIndex = winner === state.players[0] || winner.name === state.players[0].name ? 0 : 1;
       finalizeGameLog(winnerIndex as 0 | 1, [p0Score, p1Score]);
+      updateStats('ai-vs-ai', false);
       return;
     }
 

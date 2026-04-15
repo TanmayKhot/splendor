@@ -2016,6 +2016,10 @@ button:not(:disabled):hover {
   text-align: center;
 }
 
+.settings-stats-grid.stats-5col {
+  grid-template-columns: auto 1fr 1fr 1fr 1fr;
+}
+
 .stats-header {
   font-size: 0.75rem;
   font-weight: 700;

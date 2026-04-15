@@ -288,31 +288,36 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
         {/* Game Stats */}
         <section className="settings-section">
           <h3>Game Stats</h3>
-          <div className="settings-stats-grid">
+          <div className="settings-stats-grid stats-5col">
             <div className="stats-header" />
             <div className="stats-header">Local</div>
             <div className="stats-header">vs AI</div>
             <div className="stats-header">Online</div>
+            <div className="stats-header">AI vs AI</div>
 
             <div className="stats-label">Wins</div>
             <div className="stats-value stats-wins">{stats.localWins}</div>
             <div className="stats-value stats-wins">{stats.aiWins}</div>
             <div className="stats-value stats-wins">{stats.onlineWins}</div>
+            <div className="stats-value">-</div>
 
             <div className="stats-label">Losses</div>
             <div className="stats-value stats-losses">{stats.localLosses}</div>
             <div className="stats-value stats-losses">{stats.aiLosses}</div>
             <div className="stats-value stats-losses">{stats.onlineLosses}</div>
+            <div className="stats-value">-</div>
 
             <div className="stats-label">Games</div>
             <div className="stats-value">{stats.localGames}</div>
             <div className="stats-value">{stats.aiGames}</div>
             <div className="stats-value">{stats.onlineGames}</div>
+            <div className="stats-value">{stats.aiVsAiGames}</div>
 
             <div className="stats-label">Win %</div>
             <div className="stats-value">{winRate(stats.localWins, stats.localGames)}</div>
             <div className="stats-value">{winRate(stats.aiWins, stats.aiGames)}</div>
             <div className="stats-value">{winRate(stats.onlineWins, stats.onlineGames)}</div>
+            <div className="stats-value">-</div>
           </div>
         </section>
 

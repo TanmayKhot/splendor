@@ -16,6 +16,7 @@ export interface GameStats {
   onlineWins: number;
   onlineLosses: number;
   onlineGames: number;
+  aiVsAiGames: number;
 }
 
 export interface UserProfile {
@@ -26,4 +27,4 @@ export interface UserProfile {
   stats: GameStats;
 }
 
-export type GameMode = 'local' | 'ai' | 'online';
+export type GameMode = 'local' | 'ai' | 'online' | 'ai-vs-ai';
