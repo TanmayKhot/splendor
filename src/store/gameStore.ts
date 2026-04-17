@@ -154,6 +154,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       createGameLog(
         { name: p1Label, provider: aiVsAiConfig.player0.provider, model: aiVsAiConfig.player0.model },
         { name: p2Label, provider: aiVsAiConfig.player1.provider, model: aiVsAiConfig.player1.model },
+        gameState.board.nobles.map(n => n.id),
       );
       set({
         ...gameState,

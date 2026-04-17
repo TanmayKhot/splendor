@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getLegalActions } from '../game/engine';
-import { getPlayerBonuses, getPlayerPoints, getTotalGems } from '../game/selectors';
+import { getPlayerBonuses, getPlayerPoints, getTotalGems, canAfford } from '../game/selectors';
 import { MAX_GEMS_IN_HAND, COLORED_GEMS } from '../game/constants';
 import { getAiMove, getAiDiscardDecision, getAiNobleSelection } from '../ai/aiService';
-import { logTurn } from '../game/turnLogger';
+import { logTurn, logEvent } from '../game/turnLogger';
 import type { AiAction } from '../ai/aiTypes';
-import type { GameState, DevelopmentCard, CardTier, ColoredGem } from '../game/types';
+import type { GameState, DevelopmentCard, Action, CardTier, ColoredGem, GemColor } from '../game/types';
 
 // No artificial delay — actions apply immediately when the API responds
 
@@ -33,6 +33,24 @@ function summarizeAction(action: AiAction): string {
       return `Discarded gems`;
     case 'selectNoble':
       return `Selected noble ${action.nobleId}`;
+  }
+}
+
+function toAiAction(action: Action): AiAction {
+  switch (action.type) {
+    case 'takeGems':
+      return { type: 'takeGems', colors: action.colors };
+    case 'take2Gems':
+      return { type: 'take2Gems', color: action.color };
+    case 'purchaseCard':
+      return { type: 'purchaseCard', cardId: action.card.id };
+    case 'reserveCard':
+      if ('fromDeck' in action.source) return { type: 'reserveCard', fromDeck: action.source.fromDeck };
+      return { type: 'reserveCard', cardId: action.source.id };
+    case 'discardGems':
+      return { type: 'discardGems', gems: action.gems as Partial<Record<GemColor, number>> };
+    case 'selectNoble':
+      return { type: 'selectNoble', nobleId: action.noble.id };
   }
 }
 
@@ -85,6 +103,13 @@ export default function AiVsAiController() {
 
           if (result.action.type === 'discardGems' && result.action.gems) {
             useGameStore.getState().discardGems(result.action.gems);
+            logEvent({
+              type: 'discard',
+              turnCount: store.turnCount,
+              playerIndex,
+              gems: result.action.gems,
+              timestamp: Date.now(),
+            });
           }
           setAiState(playerIndex, {
             status: 'done',
@@ -104,6 +129,13 @@ export default function AiVsAiController() {
             const noble = store.pendingNobles.find(n => n.id === nobleId);
             if (noble) {
               useGameStore.getState().selectNoble(noble);
+              logEvent({
+                type: 'nobleClaim',
+                turnCount: store.turnCount,
+                playerIndex,
+                nobleId: noble.id,
+                timestamp: Date.now(),
+              });
             }
           }
           setAiState(playerIndex, {
@@ -149,8 +181,45 @@ export default function AiVsAiController() {
           }
         }
 
-        // Log the turn
+        // Log the turn with enriched eval fields
         const afterState = useGameStore.getState() as GameState;
+
+        // Purchase-specific enrichment
+        let purchasedCardTier: CardTier | undefined;
+        let purchasedCardPrestige: number | undefined;
+        let purchasedCardGemBonus: ColoredGem | undefined;
+        let goldSpent: number | undefined;
+
+        if (action.type === 'purchaseCard') {
+          const purchasedCard = afterState.players[playerIndex].purchased.find(
+            c => c.id === action.cardId,
+          );
+          if (purchasedCard) {
+            purchasedCardTier = purchasedCard.tier;
+            purchasedCardPrestige = purchasedCard.prestigePoints;
+            purchasedCardGemBonus = purchasedCard.gemBonus;
+          }
+          goldSpent = currentState.players[playerIndex].gems.gold - afterState.players[playerIndex].gems.gold;
+        }
+
+        // Reserve-specific enrichment
+        let reservedCardId: string | undefined;
+        let isBlockingReserve: boolean | undefined;
+
+        if (action.type === 'reserveCard') {
+          const preReservedIds = new Set(currentState.players[playerIndex].reserved.map(c => c.id));
+          const newCard = afterState.players[playerIndex].reserved.find(c => !preReservedIds.has(c.id));
+          reservedCardId = newCard?.id;
+
+          if ('cardId' in action) {
+            const card = findCardById(currentState, action.cardId);
+            const opponentIndex = (1 - playerIndex) as 0 | 1;
+            isBlockingReserve = card ? canAfford(card, currentState.players[opponentIndex]) : false;
+          } else {
+            isBlockingReserve = false;
+          }
+        }
+
         logTurn({
           turnCount: currentState.turnCount,
           playerIndex,
@@ -162,6 +231,13 @@ export default function AiVsAiController() {
           actingPlayerBonuses: buildBonusesRecord(afterState, playerIndex),
           actingPlayerTotalGems: getTotalGems(afterState.players[playerIndex]),
           responseTimeMs: result.responseTimeMs,
+          actingPlayerGems: { ...afterState.players[playerIndex].gems },
+          purchasedCardTier,
+          purchasedCardPrestige,
+          purchasedCardGemBonus,
+          goldSpent,
+          reservedCardId,
+          isBlockingReserve,
         });
 
         setAiState(playerIndex, {
@@ -196,6 +272,22 @@ export default function AiVsAiController() {
                   latestStore.reserveCard(fallbackAction.source);
                   break;
               }
+              // Log the fallback turn
+              const fallbackAfterState = useGameStore.getState() as GameState;
+              logTurn({
+                turnCount: fallbackState.turnCount,
+                playerIndex,
+                provider: config.provider,
+                model: config.model,
+                action: toAiAction(fallbackAction),
+                reasoning: ['AI failed 3 times — used automatic fallback action.'],
+                playerPoints: [getPlayerPoints(fallbackAfterState.players[0]), getPlayerPoints(fallbackAfterState.players[1])],
+                actingPlayerBonuses: buildBonusesRecord(fallbackAfterState, playerIndex),
+                actingPlayerTotalGems: getTotalGems(fallbackAfterState.players[playerIndex]),
+                responseTimeMs: 0,
+                actingPlayerGems: { ...fallbackAfterState.players[playerIndex].gems },
+              });
+
               setAiState(playerIndex, {
                 status: 'done',
                 reasoning: ['AI failed 3 times — used automatic fallback action.'],
