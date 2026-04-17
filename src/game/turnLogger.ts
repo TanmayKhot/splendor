@@ -1,4 +1,4 @@
-import type { TurnLogEntry, GameLog, AiProvider } from '../ai/aiTypes';
+import type { TurnLogEntry, GameLog, GameLogEvent, AiProvider } from '../ai/aiTypes';
 
 // ── Module-level state ──────────────────────────────────────
 
@@ -9,6 +9,7 @@ let currentLog: GameLog | null = null;
 export function createGameLog(
   player0: { name: string; provider: AiProvider; model: string },
   player1: { name: string; provider: AiProvider; model: string },
+  boardNobleIds: string[] = [],
 ): void {
   currentLog = {
     gameId: `game-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -19,7 +20,14 @@ export function createGameLog(
     winnerIndex: null,
     finalScores: [0, 0],
     turns: [],
+    boardNobleIds,
+    events: [],
   };
+}
+
+export function logEvent(event: GameLogEvent): void {
+  if (!currentLog) return;
+  currentLog.events.push(event);
 }
 
 export function logTurn(entry: Omit<TurnLogEntry, 'timestamp' | 'isFallback'>): void {

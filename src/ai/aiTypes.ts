@@ -67,7 +67,21 @@ export interface TurnLogEntry {
   actingPlayerTotalGems: number;
   responseTimeMs: number;
   timestamp: number;
+  // Enriched fields for eval metrics
+  actingPlayerGems?: Record<GemColor, number>;
+  purchasedCardTier?: CardTier;
+  purchasedCardPrestige?: number;
+  purchasedCardGemBonus?: ColoredGem;
+  goldSpent?: number;
+  reservedCardId?: string;
+  isBlockingReserve?: boolean;
 }
+
+// ── Game Log Events ──────────────────────────────────────
+
+export type GameLogEvent =
+  | { type: 'discard'; turnCount: number; playerIndex: 0 | 1; gems: Partial<Record<GemColor, number>>; timestamp: number }
+  | { type: 'nobleClaim'; turnCount: number; playerIndex: 0 | 1; nobleId: string; timestamp: number };
 
 export interface GameLog {
   gameId: string;
@@ -78,4 +92,6 @@ export interface GameLog {
   winnerIndex: 0 | 1 | null;
   finalScores: [number, number];
   turns: TurnLogEntry[];
+  boardNobleIds: string[];
+  events: GameLogEvent[];
 }
