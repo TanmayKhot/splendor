@@ -15,4 +15,6 @@ local-storage-plan.md
 gameplay_analysis.md
 gameplay_eval_implementation_plan.md
 splendor-game-log-*.json
-logs/
+splendor-eval-report*.json
+evals/logs/
+evals/reports/
