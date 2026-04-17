@@ -4,6 +4,7 @@ import { getPlayerPoints } from '../game/selectors';
 import { updateStats } from '../store/profileService';
 import { finalizeGameLog, exportGameLogJson, getGameLog } from '../game/turnLogger';
 import { analyzeGameLog } from '../game/evalAnalysis';
+import { openEvalDashboard } from '../game/evalDashboard';
 import { getModelDisplayName } from '../ai/modelNames';
 import type { GameMode } from '../store/profileTypes';
 
@@ -63,18 +64,11 @@ export default function GameOver() {
     URL.revokeObjectURL(url);
   }
 
-  function handleDownloadEvalReport() {
+  function handleOpenEvalDashboard() {
     const log = getGameLog();
     if (!log) return;
     const report = analyzeGameLog(log);
-    const json = JSON.stringify(report, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `splendor-eval-report-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    openEvalDashboard(report);
   }
 
   if (aiVsAiMode && aiVsAiConfig) {
@@ -95,8 +89,8 @@ export default function GameOver() {
           <button className="btn-download-log" onClick={handleDownloadLog}>
             Download Game Log
           </button>
-          <button className="btn-download-log" onClick={handleDownloadEvalReport}>
-            Download Eval Report
+          <button className="btn-eval-dashboard" onClick={handleOpenEvalDashboard}>
+            Review Performance Evaluation
           </button>
         </div>
       </div>

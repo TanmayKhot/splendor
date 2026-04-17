@@ -169,16 +169,24 @@
   }
   .info-tip:hover { background: var(--gold-dim); color: var(--gold); border-color: rgba(245,197,24,0.4); }
   .info-tip .tip-text {
-    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    display: none; position: absolute; left: 50%; transform: translateX(-50%);
     background: #1e293b; color: var(--text); padding: 8px 12px; border-radius: 6px;
     font-size: 0.72rem; font-weight: 400; font-style: normal; font-family: 'Segoe UI', system-ui, sans-serif;
     white-space: normal; width: 240px; text-align: left; line-height: 1.4;
     box-shadow: 0 4px 16px rgba(0,0,0,0.5); border: 1px solid var(--border);
     z-index: 100; pointer-events: none;
   }
+  /* Default: above */
+  .info-tip .tip-text { bottom: calc(100% + 8px); }
   .info-tip .tip-text::after {
     content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
     border: 6px solid transparent; border-top-color: #1e293b;
+  }
+  /* Flipped: below */
+  .info-tip .tip-text.tip-below { bottom: auto; top: calc(100% + 8px); }
+  .info-tip .tip-text.tip-below::after {
+    top: auto; bottom: 100%;
+    border-top-color: transparent; border-bottom-color: #1e293b;
   }
   .info-tip:hover .tip-text { display: block; }
 
@@ -215,6 +223,9 @@ dropZone.addEventListener('drop', e => {
   if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+// Auto-render if data was injected (e.g. opened from the game)
+if (window.__EVAL_DATA__) { render(window.__EVAL_DATA__); }
 
 function loadFile(file) {
   const reader = new FileReader();
@@ -603,6 +614,20 @@ function render(d) {
       </div>
     </div>
   `;
+
+  // Position tooltips: flip below if they'd overflow the viewport top
+  el.querySelectorAll('.info-tip').forEach(tip => {
+    tip.addEventListener('mouseenter', () => {
+      const tt = tip.querySelector('.tip-text');
+      if (!tt) return;
+      tt.classList.remove('tip-below');
+      const rect = tip.getBoundingClientRect();
+      // If tooltip above would go off-screen (need ~80px clearance for tooltip height)
+      if (rect.top < 90) {
+        tt.classList.add('tip-below');
+      }
+    });
+  });
 }
 </script>
 </body>
