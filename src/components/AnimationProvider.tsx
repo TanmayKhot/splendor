@@ -44,10 +44,13 @@ export const useAnimation = () => useContext(AnimationContext);
 
 let nextId = 0;
 
-const HIGHLIGHT_DURATION = 2500; // ms golden glow before flying
-const FLY_DURATION = 1.2; // seconds for the fly animation
-const FLY_DURATION_MS = FLY_DURATION * 1000 + 200; // ms with buffer for cleanup
-const GEM_STAGGER = 300; // ms between each gem starting its highlight
+const HIGHLIGHT_DURATION_NORMAL = 2500; // ms golden glow before flying
+const FLY_DURATION_NORMAL = 1.2; // seconds for the fly animation
+const GEM_STAGGER_NORMAL = 300; // ms between each gem starting its highlight
+
+const HIGHLIGHT_DURATION_FAST = 400; // ms — shortened for AI vs AI
+const FLY_DURATION_FAST = 0.4; // seconds — shortened for AI vs AI
+const GEM_STAGGER_FAST = 80; // ms — shortened for AI vs AI
 
 /** Renders card content (points, bonus, cost) inside the flying overlay */
 function FlyingCardContent({ card }: { card: DevelopmentCard }) {
@@ -70,6 +73,16 @@ function FlyingCardContent({ card }: { card: DevelopmentCard }) {
 }
 
 export default function AnimationProvider({ children }: { children: React.ReactNode }) {
+  const aiVsAiMode = useGameStore(s => s.aiVsAiMode);
+  const highlightDuration = aiVsAiMode ? HIGHLIGHT_DURATION_FAST : HIGHLIGHT_DURATION_NORMAL;
+  const flyDuration = aiVsAiMode ? FLY_DURATION_FAST : FLY_DURATION_NORMAL;
+  const flyDurationMs = flyDuration * 1000 + 200;
+  const gemStagger = aiVsAiMode ? GEM_STAGGER_FAST : GEM_STAGGER_NORMAL;
+
+  // Refs so the subscription closure always gets current timing values
+  const timingRef = useRef({ highlightDuration, flyDuration, flyDurationMs, gemStagger });
+  timingRef.current = { highlightDuration, flyDuration, flyDurationMs, gemStagger };
+
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [inFlightGems, setInFlightGems] = useState<Map<string, number>>(new Map());
   const [suppressedCardIds, setSuppressedCardIds] = useState<Set<string>>(new Set());
@@ -279,6 +292,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
     }
 
     if (items.length > 0) {
+      const { highlightDuration: hl, flyDurationMs: fdMs, gemStagger: gs } = timingRef.current;
       items.forEach((item, i) => {
         setTimeout(() => {
           const ids = addFlyingItems([item]);
@@ -315,10 +329,10 @@ export default function AnimationProvider({ children }: { children: React.ReactN
             ids.forEach(id => {
               transitionToFly(id);
               // Timeout fallback: remove item after fly duration even if onAnimationComplete doesn't fire
-              setTimeout(() => removeFlyingItem(id), FLY_DURATION_MS);
+              setTimeout(() => removeFlyingItem(id), fdMs);
             });
-          }, HIGHLIGHT_DURATION);
-        }, i * GEM_STAGGER);
+          }, hl);
+        }, i * gs);
       });
     }
   }
@@ -359,7 +373,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                 }}
                 exit={{ opacity: 0 }}
                 transition={{
-                  duration: HIGHLIGHT_DURATION / 1000,
+                  duration: highlightDuration / 1000,
                   ease: 'easeInOut',
                 }}
               >
@@ -396,7 +410,7 @@ export default function AnimationProvider({ children }: { children: React.ReactN
                 }}
                 exit={{ opacity: 0, scale: 0.2 }}
                 transition={{
-                  duration: FLY_DURATION,
+                  duration: flyDuration,
                   ease: [0.25, 0.46, 0.45, 0.94],
                 }}
                 onAnimationComplete={() => removeFlyingItem(item.id)}

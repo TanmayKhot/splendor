@@ -8,7 +8,7 @@ import { logTurn } from '../game/turnLogger';
 import type { AiAction } from '../ai/aiTypes';
 import type { GameState, DevelopmentCard, CardTier, ColoredGem } from '../game/types';
 
-const TURN_DELAY_MS = 1000;
+// No artificial delay — actions apply immediately when the API responds
 
 function findCardById(state: GameState, cardId: string): DevelopmentCard | undefined {
   for (const tierCards of state.board.visibleCards) {
@@ -80,7 +80,7 @@ export default function AiVsAiController() {
           const player = store.players[playerIndex];
           const excess = getTotalGems(player) - MAX_GEMS_IN_HAND;
           setAiState(playerIndex, { status: 'thinking' });
-          await delay(TURN_DELAY_MS);
+
           const result = await getAiDiscardDecision(player.gems, excess, config, playerIndex);
 
           if (result.action.type === 'discardGems' && result.action.gems) {
@@ -96,7 +96,7 @@ export default function AiVsAiController() {
 
         if (store.pendingNobles) {
           setAiState(playerIndex, { status: 'thinking' });
-          await delay(TURN_DELAY_MS);
+
           const result = await getAiNobleSelection(store.pendingNobles, config, playerIndex);
 
           if (result.action.type === 'selectNoble') {
@@ -121,7 +121,6 @@ export default function AiVsAiController() {
 
         if (legalActions.length === 0) return;
 
-        await delay(TURN_DELAY_MS);
         const result = await getAiMove(currentState, legalActions, config, playerIndex);
         const action = result.action;
 
@@ -230,6 +229,3 @@ export default function AiVsAiController() {
   return null;
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}

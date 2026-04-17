@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { getPlayerPoints } from '../game/selectors';
 import { updateStats } from '../store/profileService';
 import { finalizeGameLog, exportGameLogJson } from '../game/turnLogger';
+import { getModelDisplayName } from '../ai/modelNames';
 import type { GameMode } from '../store/profileTypes';
 
 export default function GameOver() {
@@ -64,8 +65,8 @@ export default function GameOver() {
   if (aiVsAiMode && aiVsAiConfig) {
     const p0Score = getPlayerPoints(players[0]);
     const p1Score = getPlayerPoints(players[1]);
-    const p0Model = aiVsAiConfig.player0.model;
-    const p1Model = aiVsAiConfig.player1.model;
+    const p0Model = getModelDisplayName(aiVsAiConfig.player0.provider, aiVsAiConfig.player0.model);
+    const p1Model = getModelDisplayName(aiVsAiConfig.player1.provider, aiVsAiConfig.player1.model);
 
     return (
       <div className="game-over">

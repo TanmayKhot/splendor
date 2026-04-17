@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { getModelDisplayName } from '../ai/modelNames';
 
 export default function AiReasoningPanel() {
   const aiMode = useGameStore(s => s.aiMode);
@@ -23,8 +24,8 @@ export default function AiReasoningPanel() {
   if (aiVsAiMode && aiVsAiConfig) {
     const state = aiStates[activeTab];
     const { status, reasoning, actionSummary } = state;
-    const p0Label = aiVsAiConfig.player0.model;
-    const p1Label = aiVsAiConfig.player1.model;
+    const p0Label = getModelDisplayName(aiVsAiConfig.player0.provider, aiVsAiConfig.player0.model);
+    const p1Label = getModelDisplayName(aiVsAiConfig.player1.provider, aiVsAiConfig.player1.model);
 
     return (
       <div className={`ai-reasoning-panel ${collapsed ? 'collapsed' : ''}`} aria-live="polite">

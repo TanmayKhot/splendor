@@ -11,6 +11,7 @@ import type {
 } from '../game/types';
 import type { AiConfig, AiState, AiVsAiConfig } from '../ai/aiTypes';
 import { createGameLog } from '../game/turnLogger';
+import { getModelDisplayName } from '../ai/modelNames';
 import {
   generateInitialState,
   canTakeGems,
@@ -147,8 +148,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   initGame: (p1Name: string, p2Name: string, aiMode?: boolean, aiConfig?: AiConfig, aiVsAiMode?: boolean, aiVsAiConfig?: AiVsAiConfig) => {
     if (aiVsAiMode && aiVsAiConfig) {
-      const p1Label = aiVsAiConfig.player0.model;
-      const p2Label = aiVsAiConfig.player1.model;
+      const p1Label = `AI 1: ${getModelDisplayName(aiVsAiConfig.player0.provider, aiVsAiConfig.player0.model)}`;
+      const p2Label = `AI 2: ${getModelDisplayName(aiVsAiConfig.player1.provider, aiVsAiConfig.player1.model)}`;
       const gameState = generateInitialState(p1Label, p2Label);
       createGameLog(
         { name: p1Label, provider: aiVsAiConfig.player0.provider, model: aiVsAiConfig.player0.model },
