@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { analyzeGameLog, aggregateReports } from './evalAnalysis';
 import type { GameLog, TurnLogEntry, GameLogEvent, AiAction } from '../ai/aiTypes';
+import type { SingleGameReport } from './evalTypes';
+import type { PlayerEvalMetrics } from './evalTypes';
 import type { ColoredGem, GemColor } from './types';
 
 // ── Test Helpers ─────────────────────────────────────────
@@ -606,7 +608,7 @@ describe('analyzeGameLog', () => {
 
     it('assigns F tier for a terrible game', () => {
       // Lost, many turns, all fallbacks
-      const turns = buildAlternatingGame(60, (i, pi) => {
+      const turns = buildAlternatingGame(60, (_i, pi) => {
         if (pi === 0) return { isFallback: true };
         return null;
       });

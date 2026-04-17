@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayerPoints } from '../game/selectors';
 import { updateStats } from '../store/profileService';
-import { finalizeGameLog, exportGameLogJson } from '../game/turnLogger';
+import { finalizeGameLog, exportGameLogJson, getGameLog } from '../game/turnLogger';
+import { analyzeGameLog } from '../game/evalAnalysis';
 import { getModelDisplayName } from '../ai/modelNames';
 import type { GameMode } from '../store/profileTypes';
 
@@ -62,6 +63,20 @@ export default function GameOver() {
     URL.revokeObjectURL(url);
   }
 
+  function handleDownloadEvalReport() {
+    const log = getGameLog();
+    if (!log) return;
+    const report = analyzeGameLog(log);
+    const json = JSON.stringify(report, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `splendor-eval-report-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (aiVsAiMode && aiVsAiConfig) {
     const p0Score = getPlayerPoints(players[0]);
     const p1Score = getPlayerPoints(players[1]);
@@ -79,6 +94,9 @@ export default function GameOver() {
           <button onClick={resetGame}>Play Again</button>
           <button className="btn-download-log" onClick={handleDownloadLog}>
             Download Game Log
+          </button>
+          <button className="btn-download-log" onClick={handleDownloadEvalReport}>
+            Download Eval Report
           </button>
         </div>
       </div>
