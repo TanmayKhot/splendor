@@ -12,4 +12,7 @@ deploy.md
 evals-draft.md
 ai-vs-ai-plan.md
 local-storage-plan.md
+gameplay_analysis.md
+gameplay_eval_implementation_plan.md
+splendor-game-log-*.json
 logs/
