@@ -36,13 +36,15 @@ const PROVIDER_MODELS: Partial<Record<AiProvider, { id: string; label: string }[
     { id: 'o1-preview', label: 'o1-preview' },
   ],
   gemini: [
+    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
+    { id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash' },
+    { id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite' },
+    { id: 'gemini-3.1-flash-live-preview', label: 'Gemini 3.1 Flash Live' },
     { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
     { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' },
-    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (Preview)' },
-    { id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)' },
-    { id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite (Preview)' },
+    { id: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash-Lite' },
     { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+    { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
   ],
 };
 
@@ -208,7 +210,23 @@ export default function GameSetup() {
       });
       if (!res.ok) {
         const errText = await res.text().catch(() => 'Unknown error');
-        throw new Error(`${res.status}: ${errText}`);
+        let message = `HTTP ${res.status}`;
+        try {
+          const errJson = JSON.parse(errText);
+          // Gemini: { error: { message: "..." } }
+          // OpenAI/OpenRouter: { error: { message: "..." } }
+          // Anthropic: { error: { message: "..." } }
+          const apiMsg = errJson?.error?.message || errJson?.error?.error || errJson?.message;
+          if (apiMsg) {
+            // Truncate to first line for readability
+            message += ': ' + String(apiMsg).split('\n')[0];
+          } else {
+            message += ': ' + errText.slice(0, 200);
+          }
+        } catch {
+          message += ': ' + errText.slice(0, 200);
+        }
+        throw new Error(message);
       }
       setTestStatus('success');
     } catch (err) {

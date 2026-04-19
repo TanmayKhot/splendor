@@ -548,8 +548,19 @@ async function callAiProxy(
     return data.content?.[0]?.text ?? JSON.stringify(data);
   }
   if (config.provider === 'gemini') {
-    // Gemini: { candidates: [{ content: { parts: [{ text: "..." }] } }] }
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? JSON.stringify(data);
+    // Gemini thinking models may return multiple parts: thought parts (thought:true)
+    // followed by the actual answer. Find the last non-thought text part.
+    const parts = data.candidates?.[0]?.content?.parts;
+    if (Array.isArray(parts)) {
+      for (let i = parts.length - 1; i >= 0; i--) {
+        if (parts[i].text && !parts[i].thought) return parts[i].text;
+      }
+      // Fallback: return any text part
+      for (const p of parts) {
+        if (p.text) return p.text;
+      }
+    }
+    return JSON.stringify(data);
   }
   // OpenAI / OpenRouter / custom: { choices: [{ message: { content: "..." } }] }
   return data.choices?.[0]?.message?.content ?? JSON.stringify(data);

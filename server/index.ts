@@ -118,7 +118,10 @@ app.post('/api/ai/chat', async (req, res) => {
       body = JSON.stringify({
         ...(systemInstruction ? { systemInstruction } : {}),
         contents,
-        generationConfig: { maxOutputTokens: 1024 },
+        generationConfig: {
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json',
+        },
       });
     } else if (provider === 'openrouter') {
       url = 'https://openrouter.ai/api/v1/chat/completions';

@@ -30,13 +30,15 @@ const MODEL_LABELS: Partial<Record<AiProvider, Record<string, string>>> = {
     'o1-preview': 'o1-preview',
   },
   gemini: {
+    'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+    'gemini-3-flash-preview': 'Gemini 3 Flash',
+    'gemini-3.1-flash-lite-preview': 'Gemini 3.1 Flash-Lite',
+    'gemini-3.1-flash-live-preview': 'Gemini 3.1 Flash Live',
     'gemini-2.5-flash': 'Gemini 2.5 Flash',
     'gemini-2.5-pro': 'Gemini 2.5 Pro',
-    'gemini-2.5-flash-lite': 'Gemini 2.5 Flash-Lite',
-    'gemini-3.1-pro-preview': 'Gemini 3.1 Pro (Preview)',
-    'gemini-3-flash-preview': 'Gemini 3 Flash (Preview)',
-    'gemini-3.1-flash-lite-preview': 'Gemini 3.1 Flash-Lite (Preview)',
+    'gemini-2.5-flash-lite-preview-06-17': 'Gemini 2.5 Flash-Lite',
     'gemini-2.0-flash': 'Gemini 2.0 Flash',
+    'gemini-2.0-flash-lite': 'Gemini 2.0 Flash-Lite',
   },
 };
 
