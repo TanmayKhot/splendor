@@ -2,6 +2,8 @@
 
 A fully playable browser-based implementation of the Splendor board game. Supports 2-player local mode, 2-player online mode via WebSocket rooms, and 1-player vs AI mode powered by any LLM of your choice.
 
+Access the game via [this link](https://splendor-production-0d8e.up.railway.app/) (The app is still under development. Contact me to receive the password to the app for Beta testing)
+
 ## Screenshots
 
 ![Game board](docs/screenshots/game-board.png)
